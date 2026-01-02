@@ -1,5 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Link } from 'react-router-dom';
+// --- IMPORT FIREBASE ---
+import { db } from './firebase';
+import { ref, onValue, set } from "firebase/database";
+// -----------------------
 import { 
   FaUser, FaInfoCircle, FaHome, FaPhone, FaMapMarkerAlt, 
   FaEnvelope, FaGraduationCap, FaVenusMars, FaBirthdayCake, FaIdBadge, 
@@ -208,8 +212,6 @@ const LineageView = ({ focusedPerson, family, onNodeClick, onOpenInfo }) => {
       {/* LEVEL 2: KARTU FOKUS */}
       <div className={`main-focus-container ${focusedPerson.gender}`} style={{cursor: !hasBiologicalParents ? 'pointer' : 'default'}}>
         
-        {/* Simbol Panah TELAH DIHAPUS di sini */}
-
         <div 
           className="card-main" 
           onClick={() => {
@@ -224,8 +226,6 @@ const LineageView = ({ focusedPerson, family, onNodeClick, onOpenInfo }) => {
             {isDeceased && <span style={{fontSize:'0.6em', color:'#94a3b8', verticalAlign:'middle'}}> (Alm)</span>}
           </span>
           <span className="role-main">{focusedPerson.role}</span>
-          
-          {/* Teks bantuan kecil juga dihapus agar benar-benar bersih */}
         </div>
         
         <div className="main-buttons-bar">
@@ -264,8 +264,8 @@ const LineageView = ({ focusedPerson, family, onNodeClick, onOpenInfo }) => {
   );
 };
 
-// --- HALAMAN ADMIN ---
-const AdminPage = ({ family, setFamily }) => {
+// --- HALAMAN ADMIN (DENGAN FIREBASE) ---
+const AdminPage = ({ family }) => {
   const initialFormState = { 
     name: "", role: "", gender: "male", birth: "", isAlive: true,
     location: "", phone: "", email: "", education: "" 
@@ -301,8 +301,13 @@ const AdminPage = ({ family, setFamily }) => {
   };
 
   const handleDelete = (id) => {
-    if(window.confirm("Yakin ingin menghapus? Data terkait mungkin error.")){
-      setFamily(family.filter(p => p.id !== id));
+    if(window.confirm("Yakin ingin menghapus? Data terkait mungkin error.")) {
+      // 1. Buat daftar baru tanpa orang yg dihapus
+      const updatedFamily = family.filter(p => p.id !== id);
+      // 2. Kirim ke Firebase
+      set(ref(db, 'family'), updatedFamily)
+        .catch(err => alert("Gagal hapus: " + err.message));
+      
       if(editId === id) handleCancelEdit();
     }
   };
@@ -319,8 +324,11 @@ const AdminPage = ({ family, setFamily }) => {
 
   const handleSubmit = (e) => {
     e.preventDefault();
+    let updatedFamily;
+
+    // A. LOGIKA JIKA EDIT DATA
     if (editId) {
-      const updatedFamily = family.map(p => {
+      updatedFamily = family.map(p => {
         if (p.id === editId) {
           return {
             ...p, ...form, photo: photo,
@@ -330,16 +338,28 @@ const AdminPage = ({ family, setFamily }) => {
         }
         return p;
       });
-      setFamily(updatedFamily); alert("Data diperbarui!"); handleCancelEdit();
-    } else {
+    } 
+    // B. LOGIKA JIKA TAMBAH BARU
+    else {
       if (!isFirstData && !selectedRelativeId) return alert("Pilih Orang Tua / Pasangan!");
       const newPerson = {
         id: Date.now(), ...form, photo: photo,
         parentId: (relationType === "child" && !isFirstData) ? parseInt(selectedRelativeId) : null,
         partnerId: (relationType === "partner" && !isFirstData) ? parseInt(selectedRelativeId) : null
       };
-      setFamily([...family, newPerson]); setForm(initialFormState); setPhoto(""); alert("Anggota ditambahkan!");
+      updatedFamily = [...family, newPerson];
     }
+
+    // C. SIMPAN KE FIREBASE (CLOUD)
+    set(ref(db, 'family'), updatedFamily)
+      .then(() => {
+        alert("Berhasil disimpan ke Server!");
+        if(editId) handleCancelEdit();
+        else { setForm(initialFormState); setPhoto(""); }
+      })
+      .catch((err) => {
+        alert("Gagal menyimpan: " + err.message);
+      });
   };
 
   const handleChange = (e) => setForm({ ...form, [e.target.name]: e.target.value });
@@ -407,8 +427,8 @@ const AdminPage = ({ family, setFamily }) => {
       </div>
 
       <div className="members-list-container">
-         <h3>📂 Database ({family.length})</h3>
-         {family.length === 0 ? <p style={{color:'#94a3b8'}}>Belum ada data.</p> : (
+         <h3>📂 Database Cloud ({family.length})</h3>
+         {family.length === 0 ? <p style={{color:'#94a3b8'}}>Belum ada data di server.</p> : (
            <div className="members-table">
              {family.map(person => (
                <div key={person.id} className="member-row">
@@ -425,7 +445,11 @@ const AdminPage = ({ family, setFamily }) => {
            </div>
          )}
          {family.length > 0 && (
-           <button onClick={() => {if(confirm('Hapus SEMUA data?')) {localStorage.removeItem('familyTreeData'); setFamily([]);}}} className="reset-all-btn">Reset Database</button>
+           <button onClick={() => {
+              if(confirm('Hapus SEMUA data di Server (Permanen)?')) {
+                 set(ref(db, 'family'), []); 
+              }
+           }} className="reset-all-btn">Reset Database Server</button>
          )}
       </div>
     </div>
@@ -460,7 +484,7 @@ const UserPage = ({ family }) => {
            <div className="empty-state">
              <div className="empty-icon"><FaTree /></div>
              <h3>Pohon Belum Ditanam</h3>
-             <p>Data silsilah keluarga belum tersedia saat ini.</p>
+             <p>Data silsilah keluarga belum tersedia di server.</p>
            </div>
         ) : (
           <LineageView 
@@ -477,14 +501,28 @@ const UserPage = ({ family }) => {
   );
 };
 
-// --- APP ROOT ---
+// --- APP ROOT (UTAMA) ---
 function App() {
-  const [family, setFamily] = useState(() => {
-    const saved = localStorage.getItem("familyTreeData");
-    return saved ? JSON.parse(saved) : [];
-  });
+  const [family, setFamily] = useState([]);
 
-  useEffect(() => { localStorage.setItem("familyTreeData", JSON.stringify(family)); }, [family]);
+  // LOGIKA BARU: MENGAMBIL DATA DARI FIREBASE (BUKAN LOCALSTORAGE)
+  useEffect(() => {
+    // 1. Hubungkan ke folder 'family' di database
+    const familyRef = ref(db, 'family');
+    
+    // 2. Pasang "telinga" (listener) untuk mendengar perubahan data
+    const unsubscribe = onValue(familyRef, (snapshot) => {
+      const data = snapshot.val();
+      if (data) {
+        setFamily(data); // Jika ada data, masukkan ke state
+      } else {
+        setFamily([]);   // Jika kosong, set array kosong
+      }
+    });
+
+    // 3. Bersihkan listener saat aplikasi ditutup
+    return () => unsubscribe();
+  }, []);
 
   return (
     <Router>
@@ -493,7 +531,7 @@ function App() {
         <div className="app-content">
           <Routes>
             <Route path="/" element={<UserPage family={family} />} />
-            <Route path="/admin" element={<AdminPage family={family} setFamily={setFamily} />} />
+            <Route path="/admin" element={<AdminPage family={family} />} />
           </Routes>
         </div>
         <Footer />
