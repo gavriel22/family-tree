@@ -11,15 +11,13 @@ import {
 } from 'react-icons/fa'; 
 import './App.css';
 
-// --- KOMPONEN NAVBAR (HANYA LOGO) ---
+// --- KOMPONEN NAVBAR ---
 const Navbar = () => {
   return (
     <nav className="navbar">
       <div className="navbar-container">
         <Link to="/" className="navbar-brand">
-          <div className="brand-icon">
-            <FaTree />
-          </div>
+          <div className="brand-icon"><FaTree /></div>
           <span className="brand-text">Galur<span className="brand-highlight">Family</span></span>
         </Link>
       </div>
@@ -34,52 +32,33 @@ const Footer = () => {
       <div className="footer-content">
         <div className="footer-section brand-section">
           <h3><FaTree /> GalurFamily</h3>
-          <p>Aplikasi pencatatan silsilah keluarga digital untuk menjaga sejarah dan mengeratkan persaudaraan antar generasi.</p>
+          <p>Aplikasi pencatatan silsilah keluarga digital.</p>
         </div>
-        
         <div className="footer-section links-section">
           <h4>Menu Pintas</h4>
-          <ul>
-            <li><Link to="/">Pohon Keluarga</Link></li>
-            <li><a href="#">Tentang Aplikasi</a></li>
-            <li><a href="#">Bantuan & Panduan</a></li>
-          </ul>
+          <ul><li><Link to="/">Pohon Keluarga</Link></li></ul>
         </div>
-
         <div className="footer-section social-section">
-          <h4>Terhubung</h4>
-          <div className="social-icons">
-            <a href="#" className="social-icon"><FaInstagram /></a>
-            <a href="#" className="social-icon"><FaFacebook /></a>
-            <a href="#" className="social-icon"><FaTwitter /></a>
-          </div>
-          <p className="copyright">
-            &copy; {new Date().getFullYear()} Galur Family Tree.<br/>All rights reserved.
-          </p>
+          <p className="copyright">&copy; {new Date().getFullYear()} Galur Family.</p>
         </div>
       </div>
     </footer>
   );
 };
 
-// --- KOMPONEN KARTU KECIL ---
+// --- MEMBER CARD ---
 const MemberCard = ({ person, onClick, isDummy = false, dummyLabel = "" }) => {
   if (isDummy) {
     return (
       <div className="card dummy">
         <div className="card-content-wrapper">
           <div className="avatar-ring dummy"><FaUser /></div>
-          <div className="card-info">
-            <span className="name">{dummyLabel}</span>
-            <span className="role">Data Kosong</span>
-          </div>
+          <div className="card-info"><span className="name">{dummyLabel}</span><span className="role">Data Kosong</span></div>
         </div>
       </div>
     );
   }
-
   const statusClass = person.isAlive === 'false' || person.isAlive === false ? 'deceased' : '';
-
   return (
     <div className={`card ${person.gender} ${statusClass}`} onClick={() => onClick(person)}>
       <div className="card-content-wrapper">
@@ -87,10 +66,7 @@ const MemberCard = ({ person, onClick, isDummy = false, dummyLabel = "" }) => {
           {person.photo ? <img src={person.photo} alt={person.name} /> : <FaUser />}
         </div>
         <div className="card-info">
-          <span className="name">
-            {person.name}
-            {statusClass === 'deceased' && <span className="deceased-badge"> (Alm)</span>}
-          </span>
+          <span className="name">{person.name}</span>
           <span className="role">{person.role || "Anggota"}</span>
         </div>
       </div>
@@ -98,68 +74,32 @@ const MemberCard = ({ person, onClick, isDummy = false, dummyLabel = "" }) => {
   );
 };
 
-// --- MODAL INFO (READ ONLY) ---
+// --- INFO MODAL ---
 const InfoModal = ({ person, onClose }) => {
   if (!person) return null;
   const isDeceased = person.isAlive === 'false' || person.isAlive === false;
-
   return (
     <div className="modal-overlay" onClick={onClose}>
       <div className="info-modal" onClick={e => e.stopPropagation()}>
-        <div className={`modal-header ${person.gender} ${isDeceased ? 'deceased-header' : ''}`}>
+        <div className={`modal-header ${person.gender}`}>
           <button className="close-modal-btn" onClick={onClose}>✕</button>
           <h3 className="modal-header-title">Detail Biodata</h3>
         </div>
         <div className="modal-content">
           <div className="modal-profile-summary">
-            <div className={`modal-avatar-big ${person.gender} ${isDeceased ? 'deceased-avatar' : ''}`}>
+            <div className={`modal-avatar-big ${person.gender}`}>
               {person.photo ? <img src={person.photo} alt={person.name} /> : <FaUser />}
             </div>
             <div className="modal-title-text">
-              <h2 className="modal-name">
-                {person.name} 
-                {isDeceased && <span style={{fontSize:'0.6em', color:'#64748b', marginLeft:'5px'}}>(Alm.)</span>}
-              </h2>
+              <h2 className="modal-name">{person.name}</h2>
               <span className={`modal-role ${person.gender}`}>{person.role || "-"}</span>
             </div>
           </div>
           <hr className="divider" />
           <div className="modal-body">
-            <div className="info-row">
-              <span className="info-icon"><FaHeartbeat /></span>
-              <div className="info-text">
-                <label>Status</label>
-                {isDeceased ? <span className="status-badge deceased">Meninggal Dunia (Wafat)</span> : <span className="status-badge alive">Masih Hidup</span>}
-              </div>
-            </div>
-            <div className="info-row">
-              <span className="info-icon"><FaVenusMars /></span>
-              <div className="info-text"><label>Jenis Kelamin</label><span>{person.gender === 'male' ? 'Laki-laki' : 'Perempuan'}</span></div>
-            </div>
-            <div className="info-row">
-              <span className="info-icon"><FaBirthdayCake /></span>
-              <div className="info-text"><label>Tanggal Lahir</label><span>{person.birth || '-'}</span></div>
-            </div>
-            <div className="info-row">
-              <span className="info-icon"><FaMapMarkerAlt /></span>
-              <div className="info-text"><label>Lokasi Tinggal</label><span>{person.location || '-'}</span></div>
-            </div>
-            <div className="info-row">
-              <span className="info-icon"><FaPhone /></span>
-              <div className="info-text"><label>Nomor Telepon</label><span>{person.phone || '-'}</span></div>
-            </div>
-            <div className="info-row">
-              <span className="info-icon"><FaEnvelope /></span>
-              <div className="info-text"><label>Alamat Email</label><span>{person.email || '-'}</span></div>
-            </div>
-            <div className="info-row">
-              <span className="info-icon"><FaGraduationCap /></span>
-              <div className="info-text"><label>Pendidikan Terakhir</label><span>{person.education || '-'}</span></div>
-            </div>
-            <div className="info-row footer-row">
-              <span className="info-icon"><FaIdBadge /></span>
-              <div className="info-text"><label>ID Sistem</label><span>{person.id}</span></div>
-            </div>
+             <div className="info-row"><span className="info-icon"><FaVenusMars /></span><div className="info-text"><label>Gender</label><span>{person.gender==='male'?'Laki-laki':'Perempuan'}</span></div></div>
+             <div className="info-row"><span className="info-icon"><FaBirthdayCake /></span><div className="info-text"><label>Lahir</label><span>{person.birth||'-'}</span></div></div>
+             <div className="info-row"><span className="info-icon"><FaMapMarkerAlt /></span><div className="info-text"><label>Lokasi</label><span>{person.location||'-'}</span></div></div>
           </div>
         </div>
       </div>
@@ -170,10 +110,7 @@ const InfoModal = ({ person, onClose }) => {
 // --- LINEAGE VIEW ---
 const LineageView = ({ focusedPerson, family, onNodeClick, onOpenInfo }) => {
   const [showDummyParents, setShowDummyParents] = useState(false);
-
-  useEffect(() => {
-    setShowDummyParents(false);
-  }, [focusedPerson]);
+  useEffect(() => setShowDummyParents(false), [focusedPerson]);
 
   if (!focusedPerson) return null;
 
@@ -182,12 +119,9 @@ const LineageView = ({ focusedPerson, family, onNodeClick, onOpenInfo }) => {
   const hasBiologicalParents = parent || parentPartner;
   const spouse = family.find(p => p.partnerId === focusedPerson.id || p.id === focusedPerson.partnerId);
   const children = family.filter(p => p.parentId === focusedPerson.id || (spouse && p.parentId === spouse.id));
-  const isDeceased = focusedPerson.isAlive === 'false' || focusedPerson.isAlive === false;
 
   return (
     <div className="lineage-group">
-      
-      {/* LEVEL 1: ORANG TUA */}
       {hasBiologicalParents && (
         <div className="connector-hbox">
           <div className="parents-section">
@@ -197,66 +131,30 @@ const LineageView = ({ focusedPerson, family, onNodeClick, onOpenInfo }) => {
           <div className="connector-line"></div>
         </div>
       )}
-
-      {/* DUMMY PARENTS (Muncul jika diklik) */}
       {!hasBiologicalParents && showDummyParents && (
         <div className="connector-hbox fade-in-anim">
-          <div className="parents-section dummy-parents">
-            <MemberCard isDummy={true} dummyLabel="Ayah" />
-            <MemberCard isDummy={true} dummyLabel="Ibu" />
-          </div>
+          <div className="parents-section dummy-parents"><MemberCard isDummy={true} dummyLabel="Ayah" /><MemberCard isDummy={true} dummyLabel="Ibu" /></div>
           <div className="connector-line" style={{borderLeftStyle:'dashed'}}></div>
         </div>
       )}
-
-      {/* LEVEL 2: KARTU FOKUS */}
       <div className={`main-focus-container ${focusedPerson.gender}`} style={{cursor: !hasBiologicalParents ? 'pointer' : 'default'}}>
-        
-        <div 
-          className="card-main" 
-          onClick={() => {
-            if (!hasBiologicalParents) setShowDummyParents(!showDummyParents);
-          }}
-        >
-          <div className={`avatar-ring main ${focusedPerson.gender} ${isDeceased ? 'deceased-avatar' : ''}`}>
+        <div className="card-main" onClick={() => {if (!hasBiologicalParents) setShowDummyParents(!showDummyParents);}}>
+          <div className={`avatar-ring main ${focusedPerson.gender}`}>
             {focusedPerson.photo ? <img src={focusedPerson.photo} alt={focusedPerson.name} /> : <FaUser />}
           </div>
-          <span className="name-main">
-            {focusedPerson.name}
-            {isDeceased && <span style={{fontSize:'0.6em', color:'#94a3b8', verticalAlign:'middle'}}> (Alm)</span>}
-          </span>
+          <span className="name-main">{focusedPerson.name}</span>
           <span className="role-main">{focusedPerson.role}</span>
         </div>
-        
         <div className="main-buttons-bar">
-          <div className="main-btn" onClick={(e) => {
-             e.stopPropagation(); 
-             onOpenInfo(focusedPerson);
-          }}>
-            <FaInfoCircle /> Detail Lengkap
-          </div>
+          <div className="main-btn" onClick={(e) => {e.stopPropagation(); onOpenInfo(focusedPerson);}}><FaInfoCircle /> Detail</div>
         </div>
       </div>
-
-      {/* LEVEL 3: PASANGAN & ANAK */}
       {(spouse || children.length > 0) && (
         <div className="connector-hbox">
           <div className="connector-line"></div>
           <div className="descendants-wrapper">
-            {spouse && (
-              <div className="descendants-section section-partner">
-                <div className="section-label label-pink">Pasangan</div>
-                <MemberCard person={spouse} onClick={onNodeClick} />
-              </div>
-            )}
-            {children.length > 0 && (
-              <div className="descendants-section section-children">
-                <div className="section-label label-blue">Anak - Anak</div>
-                {children.map(child => (
-                  <MemberCard key={child.id} person={child} onClick={onNodeClick} />
-                ))}
-              </div>
-            )}
+            {spouse && (<div className="descendants-section section-partner"><div className="section-label label-pink">Pasangan</div><MemberCard person={spouse} onClick={onNodeClick} /></div>)}
+            {children.length > 0 && (<div className="descendants-section section-children"><div className="section-label label-blue">Anak</div>{children.map(c => <MemberCard key={c.id} person={c} onClick={onNodeClick} />)}</div>)}
           </div>
         </div>
       )}
@@ -264,12 +162,9 @@ const LineageView = ({ focusedPerson, family, onNodeClick, onOpenInfo }) => {
   );
 };
 
-// --- HALAMAN ADMIN (DENGAN FIREBASE) ---
+// --- ADMIN PAGE ---
 const AdminPage = ({ family }) => {
-  const initialFormState = { 
-    name: "", role: "", gender: "male", birth: "", isAlive: true,
-    location: "", phone: "", email: "", education: "" 
-  };
+  const initialFormState = { name: "", role: "", gender: "male", birth: "", isAlive: true, location: "", phone: "", email: "", education: "" };
   const [form, setForm] = useState(initialFormState);
   const [photo, setPhoto] = useState("");
   const [relationType, setRelationType] = useState("child");
@@ -279,35 +174,20 @@ const AdminPage = ({ family }) => {
 
   const handleEditClick = (person) => {
     setEditId(person.id);
-    setForm({
-      name: person.name, role: person.role, gender: person.gender, 
-      birth: person.birth, isAlive: person.isAlive ?? true,
-      location: person.location, phone: person.phone, 
-      email: person.email, education: person.education
-    });
+    setForm({ name: person.name, role: person.role, gender: person.gender, birth: person.birth, isAlive: person.isAlive ?? true, location: person.location, phone: person.phone, email: person.email, education: person.education });
     setPhoto(person.photo || "");
-    if (person.parentId) {
-      setRelationType("child"); setSelectedRelativeId(person.parentId);
-    } else if (person.partnerId) {
-      setRelationType("partner"); setSelectedRelativeId(person.partnerId);
-    } else {
-      setSelectedRelativeId("");
-    }
+    if (person.parentId) { setRelationType("child"); setSelectedRelativeId(person.parentId); }
+    else if (person.partnerId) { setRelationType("partner"); setSelectedRelativeId(person.partnerId); }
+    else { setSelectedRelativeId(""); }
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  const handleCancelEdit = () => {
-    setEditId(null); setForm(initialFormState); setPhoto(""); setSelectedRelativeId("");
-  };
+  const handleCancelEdit = () => { setEditId(null); setForm(initialFormState); setPhoto(""); setSelectedRelativeId(""); };
 
   const handleDelete = (id) => {
-    if(window.confirm("Yakin ingin menghapus? Data terkait mungkin error.")) {
-      // 1. Buat daftar baru tanpa orang yg dihapus
+    if(window.confirm("Yakin hapus?")) {
       const updatedFamily = family.filter(p => p.id !== id);
-      // 2. Kirim ke Firebase
-      set(ref(db, 'family'), updatedFamily)
-        .catch(err => alert("Gagal hapus: " + err.message));
-      
+      set(ref(db, 'family'), updatedFamily);
       if(editId === id) handleCancelEdit();
     }
   };
@@ -315,7 +195,6 @@ const AdminPage = ({ family }) => {
   const handleImageUpload = (e) => {
     const file = e.target.files[0];
     if (file) {
-      if(file.size > 512000) return alert("File Max 500KB");
       const reader = new FileReader();
       reader.onloadend = () => setPhoto(reader.result);
       reader.readAsDataURL(file);
@@ -325,167 +204,87 @@ const AdminPage = ({ family }) => {
   const handleSubmit = (e) => {
     e.preventDefault();
     let updatedFamily;
-
-    // A. LOGIKA JIKA EDIT DATA
     if (editId) {
       updatedFamily = family.map(p => {
         if (p.id === editId) {
-          return {
-            ...p, ...form, photo: photo,
-            parentId: (!isFirstData && relationType === "child") ? parseInt(selectedRelativeId) : p.parentId,
-            partnerId: (!isFirstData && relationType === "partner") ? parseInt(selectedRelativeId) : p.partnerId
-          };
-        }
-        return p;
+          return { ...p, ...form, photo: photo, parentId: (!isFirstData && relationType === "child") ? parseInt(selectedRelativeId) : p.parentId, partnerId: (!isFirstData && relationType === "partner") ? parseInt(selectedRelativeId) : p.partnerId };
+        } return p;
       });
-    } 
-    // B. LOGIKA JIKA TAMBAH BARU
-    else {
+    } else {
       if (!isFirstData && !selectedRelativeId) return alert("Pilih Orang Tua / Pasangan!");
-      const newPerson = {
-        id: Date.now(), ...form, photo: photo,
-        parentId: (relationType === "child" && !isFirstData) ? parseInt(selectedRelativeId) : null,
-        partnerId: (relationType === "partner" && !isFirstData) ? parseInt(selectedRelativeId) : null
-      };
+      const newPerson = { id: Date.now(), ...form, photo: photo, parentId: (relationType === "child" && !isFirstData) ? parseInt(selectedRelativeId) : null, partnerId: (relationType === "partner" && !isFirstData) ? parseInt(selectedRelativeId) : null };
       updatedFamily = [...family, newPerson];
     }
-
-    // C. SIMPAN KE FIREBASE (CLOUD)
-    set(ref(db, 'family'), updatedFamily)
-      .then(() => {
-        alert("Berhasil disimpan ke Server!");
-        if(editId) handleCancelEdit();
-        else { setForm(initialFormState); setPhoto(""); }
-      })
-      .catch((err) => {
-        alert("Gagal menyimpan: " + err.message);
-      });
-  };
-
-  const handleChange = (e) => setForm({ ...form, [e.target.name]: e.target.value });
-  const handleRelationTypeChange = (type) => {
-    setRelationType(type);
-    if(!editId) setForm(prev => ({ ...prev, role: type === 'partner' ? (prev.gender === 'female' ? 'Istri' : 'Suami') : '' }));
+    set(ref(db, 'family'), updatedFamily).then(() => { alert("Disimpan!"); if(editId) handleCancelEdit(); else { setForm(initialFormState); setPhoto(""); } });
   };
 
   return (
     <div className="admin-container">
-      <div className="page-header">
-        <h1>Manajemen Data</h1>
-        <p>Halaman Rahasia Admin: Tambah, edit, atau hapus anggota.</p>
-        <Link to="/" style={{color: 'var(--galur-blue)', fontWeight:'bold'}}>← Kembali ke Web Utama</Link>
-      </div>
-
+      <div className="page-header"><h1>Manajemen Data</h1><Link to="/">← Kembali ke Web Utama</Link></div>
       <div className="form-card">
-        <div className="form-header">
-           <h3 style={{margin:0}}>{editId ? `Edit: ${form.name}` : (isFirstData ? "Leluhur Utama" : "Tambah Anggota")}</h3>
-           {editId && <button onClick={handleCancelEdit} className="cancel-badge">Batal</button>}
-        </div>
-
-        {!isFirstData && (
-          <div style={{display:'flex', gap:'10px', marginBottom:'20px'}}>
-            <button type="button" onClick={() => handleRelationTypeChange('child')} style={{flex:1, padding:'10px', background:relationType==='child'?'var(--galur-blue)':'#f1f5f9', color:relationType==='child'?'white':'black', border:'none', borderRadius:'8px', fontWeight:'bold'}}>Anak</button>
-            <button type="button" onClick={() => handleRelationTypeChange('partner')} style={{flex:1, padding:'10px', background:relationType==='partner'?'var(--galur-pink)':'#f1f5f9', color:relationType==='partner'?'white':'black', border:'none', borderRadius:'8px', fontWeight:'bold'}}>Pasangan</button>
-          </div>
-        )}
-
+        <h3>{editId ? "Edit Anggota" : "Tambah Anggota"}</h3>
         <form onSubmit={handleSubmit}>
-          <input name="name" placeholder="Nama Lengkap" value={form.name} onChange={handleChange} required />
-          <div style={{display:'flex', gap:'10px'}}>
-             <input name="role" placeholder="Status (cth: Anak)" value={form.role} onChange={handleChange} style={{flex:2}} />
-             <select name="isAlive" value={form.isAlive} onChange={handleChange} style={{flex:1}}>
-                <option value={true}>Hidup</option>
-                <option value={false}>Wafat</option>
-             </select>
-          </div>
-          <div style={{display:'flex', gap:'10px'}}>
-             <input name="birth" type="date" placeholder="Tgl Lahir" value={form.birth} onChange={handleChange} />
-             <select name="gender" value={form.gender} onChange={handleChange}>
-                <option value="male">Laki-laki</option>
-                <option value="female">Perempuan</option>
-             </select>
-          </div>
-          <input name="location" placeholder="Lokasi" value={form.location} onChange={handleChange} />
-          <div style={{display:'flex', gap:'10px'}}>
-             <input name="phone" placeholder="No. Telepon" value={form.phone} onChange={handleChange} />
-             <input name="email" placeholder="Email" value={form.email} onChange={handleChange} />
-          </div>
-          <input name="education" placeholder="Pendidikan" value={form.education} onChange={handleChange} />
-          <div style={{marginBottom:'15px', border:'1px dashed #cbd5e1', padding:'10px', borderRadius:'8px'}}>
-            <label style={{fontSize:'0.8rem', color:'#777', display:'block', marginBottom:'5px'}}>Foto Profil:</label>
-            {photo && <img src={photo} alt="Prev" style={{width:40, height:40, borderRadius:'50%', objectFit:'cover', marginRight:10, verticalAlign:'middle'}} />}
-            <input type="file" accept="image/*" onChange={handleImageUpload} style={{border:'none', padding:0, width:'auto'}} />
-          </div>
+          <input name="name" placeholder="Nama" value={form.name} onChange={e => setForm({...form, name:e.target.value})} required />
+          <input name="role" placeholder="Status" value={form.role} onChange={e => setForm({...form, role:e.target.value})} />
+          <div style={{margin:'10px 0'}}><label>Foto:</label><input type="file" onChange={handleImageUpload} /></div>
           {!isFirstData && (
-            <select value={selectedRelativeId} onChange={e => setSelectedRelativeId(e.target.value)} required={!editId}>
-              <option value="">-- Hubungkan dengan {relationType === 'child' ? 'Orang Tua' : 'Pasangan'} --</option>
-              {family.filter(p => p.id !== editId).map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
-            </select>
+             <div>
+               <select onChange={e => setRelationType(e.target.value)} value={relationType}>
+                 <option value="child">Sebagai Anak</option><option value="partner">Sebagai Pasangan</option>
+               </select>
+               <select value={selectedRelativeId} onChange={e => setSelectedRelativeId(e.target.value)} required={!editId}>
+                 <option value="">-- Pilih Kerabat --</option>
+                 {family.filter(p => p.id !== editId).map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
+               </select>
+             </div>
           )}
-          <button type="submit" className={`save-btn ${editId ? 'edit-mode' : ''}`}>{editId ? "Update Data" : "Simpan Data"}</button>
+          <button type="submit" className="save-btn">Simpan</button>
+          {editId && <button type="button" onClick={handleCancelEdit}>Batal</button>}
         </form>
       </div>
-
       <div className="members-list-container">
-         <h3>📂 Database Cloud ({family.length})</h3>
-         {family.length === 0 ? <p style={{color:'#94a3b8'}}>Belum ada data di server.</p> : (
-           <div className="members-table">
-             {family.map(person => (
-               <div key={person.id} className="member-row">
-                 <div className="member-row-info">
-                    <img src={person.photo || "https://via.placeholder.com/40"} alt="avatar" />
-                    <div><span className="row-name">{person.name}</span><span className="row-role">{person.role}</span></div>
-                 </div>
-                 <div className="member-row-actions">
-                    <button onClick={() => handleEditClick(person)} className="action-btn edit"><FaEdit /></button>
-                    <button onClick={() => handleDelete(person.id)} className="action-btn delete"><FaTrash /></button>
-                 </div>
-               </div>
-             ))}
+         {family.map(p => (
+           <div key={p.id} className="member-row" style={{display:'flex', justifyContent:'space-between', padding:'10px', borderBottom:'1px solid #eee'}}>
+             <span>{p.name} ({p.role})</span>
+             <div>
+               <button onClick={() => handleEditClick(p)} style={{marginRight:'5px'}}>Edit</button>
+               <button onClick={() => handleDelete(p.id)}>Hapus</button>
+             </div>
            </div>
-         )}
-         {family.length > 0 && (
-           <button onClick={() => {
-              if(confirm('Hapus SEMUA data di Server (Permanen)?')) {
-                 set(ref(db, 'family'), []); 
-              }
-           }} className="reset-all-btn">Reset Database Server</button>
-         )}
+         ))}
       </div>
     </div>
   );
 };
 
-// --- HALAMAN UTAMA (USER) ---
+// --- USER PAGE (PERBAIKAN LOGIKA) ---
 const UserPage = ({ family }) => {
   const [focusedPersonId, setFocusedPersonId] = useState(null);
   const [infoModalData, setInfoModalData] = useState(null);
-  const initialRoot = family.find(p => p.parentId === null && p.partnerId === null);
+
+  // --- BAGIAN INI YANG DIPERBAIKI ---
+  // Kita cari orang yang parentId-nya kosong (null, undefined, atau 0)
+  // DAN partnerId-nya juga kosong.
+  const initialRoot = family.find(p => !p.parentId && !p.partnerId); 
 
   useEffect(() => {
-    if (initialRoot && !focusedPersonId) setFocusedPersonId(initialRoot.id);
+    // Jika belum ada fokus, dan ketemu leluhur, set fokus ke leluhur itu
+    if (initialRoot && !focusedPersonId) {
+       setFocusedPersonId(initialRoot.id);
+    }
+    // Jika data ada TAPI tidak ketemu leluhur (kasus langka), paksa ambil orang pertama di array
+    else if (family.length > 0 && !focusedPersonId && !initialRoot) {
+       setFocusedPersonId(family[0].id);
+    }
   }, [family, initialRoot, focusedPersonId]);
+  // ----------------------------------
 
   return (
     <div className="user-page-container">
-      <div className="page-header center">
-        <h1>Pohon Silsilah</h1>
-        <p>Telusuri garis keturunan dan hubungan kekerabatan.</p>
-      </div>
-
+      <div className="page-header center"><h1>Pohon Silsilah</h1></div>
       <div className="tree-wrapper">
-        {initialRoot && focusedPersonId !== initialRoot.id && (
-           <button className="btn-reset-view" onClick={() => setFocusedPersonId(initialRoot.id)}>
-            <FaHome /> Kembali ke Leluhur
-           </button>
-        )}
-
         {family.length === 0 ? (
-           <div className="empty-state">
-             <div className="empty-icon"><FaTree /></div>
-             <h3>Pohon Belum Ditanam</h3>
-             <p>Data silsilah keluarga belum tersedia di server.</p>
-           </div>
+           <div className="empty-state"><h3>Pohon Belum Ditanam</h3></div>
         ) : (
           <LineageView 
              focusedPerson={family.find(p => p.id === focusedPersonId)} 
@@ -495,46 +294,26 @@ const UserPage = ({ family }) => {
           />
         )}
       </div>
-
       <InfoModal person={infoModalData} onClose={() => setInfoModalData(null)} />
     </div>
   );
 };
 
-// --- APP ROOT (UTAMA) ---
+// --- APP ROOT ---
 function App() {
   const [family, setFamily] = useState([]);
-
-  // LOGIKA BARU: MENGAMBIL DATA DARI FIREBASE (BUKAN LOCALSTORAGE)
   useEffect(() => {
-    // 1. Hubungkan ke folder 'family' di database
     const familyRef = ref(db, 'family');
-    
-    // 2. Pasang "telinga" (listener) untuk mendengar perubahan data
-    const unsubscribe = onValue(familyRef, (snapshot) => {
+    return onValue(familyRef, (snapshot) => {
       const data = snapshot.val();
-      if (data) {
-        setFamily(data); // Jika ada data, masukkan ke state
-      } else {
-        setFamily([]);   // Jika kosong, set array kosong
-      }
+      setFamily(data || []);
     });
-
-    // 3. Bersihkan listener saat aplikasi ditutup
-    return () => unsubscribe();
   }, []);
 
   return (
     <Router>
       <div className="app-layout">
-        <Navbar />
-        <div className="app-content">
-          <Routes>
-            <Route path="/" element={<UserPage family={family} />} />
-            <Route path="/admin" element={<AdminPage family={family} />} />
-          </Routes>
-        </div>
-        <Footer />
+        <Navbar /><div className="app-content"><Routes><Route path="/" element={<UserPage family={family} />} /><Route path="/admin" element={<AdminPage family={family} />} /></Routes></div><Footer />
       </div>
     </Router>
   );
