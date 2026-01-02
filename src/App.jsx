@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Link } from 'react-router-dom';
 // --- IMPORT FIREBASE ---
+// Pastikan file firebase.js ada di folder src
 import { db } from './firebase';
 import { ref, onValue, set } from "firebase/database";
 // -----------------------
@@ -56,7 +57,7 @@ const Footer = () => {
   );
 };
 
-// --- MEMBER CARD (LENGKAP) ---
+// --- MEMBER CARD ---
 const MemberCard = ({ person, onClick, isDummy = false, dummyLabel = "" }) => {
   if (isDummy) {
     return (
@@ -68,7 +69,12 @@ const MemberCard = ({ person, onClick, isDummy = false, dummyLabel = "" }) => {
       </div>
     );
   }
+  
+  // Pastikan person tidak null/undefined
+  if (!person) return null;
+
   const statusClass = person.isAlive === 'false' || person.isAlive === false ? 'deceased' : '';
+  
   return (
     <div className={`card ${person.gender} ${statusClass}`} onClick={() => onClick(person)}>
       <div className="card-content-wrapper">
@@ -87,7 +93,7 @@ const MemberCard = ({ person, onClick, isDummy = false, dummyLabel = "" }) => {
   );
 };
 
-// --- INFO MODAL (DATA LENGKAP) ---
+// --- INFO MODAL ---
 const InfoModal = ({ person, onClose }) => {
   if (!person) return null;
   const isDeceased = person.isAlive === 'false' || person.isAlive === false;
@@ -141,7 +147,6 @@ const LineageView = ({ focusedPerson, family, onNodeClick, onOpenInfo }) => {
 
   if (!focusedPerson) return null;
 
-  // Logika mencari orang tua dan pasangan
   const parent = family.find(p => p.id === focusedPerson.parentId);
   const parentPartner = parent ? family.find(p => p.partnerId === parent.id || p.id === parent.partnerId) : null;
   const hasBiologicalParents = parent || parentPartner;
@@ -194,7 +199,7 @@ const LineageView = ({ focusedPerson, family, onNodeClick, onOpenInfo }) => {
   );
 };
 
-// --- ADMIN PAGE (DATA LENGKAP + FIREBASE) ---
+// --- ADMIN PAGE (DENGAN FIX UNDEFINED) ---
 const AdminPage = ({ family }) => {
   const initialFormState = { name: "", role: "", gender: "male", birth: "", isAlive: true, location: "", phone: "", email: "", education: "" };
   const [form, setForm] = useState(initialFormState);
@@ -206,11 +211,31 @@ const AdminPage = ({ family }) => {
 
   const handleEditClick = (person) => {
     setEditId(person.id);
-    setForm({ name: person.name, role: person.role, gender: person.gender, birth: person.birth, isAlive: person.isAlive ?? true, location: person.location, phone: person.phone, email: person.email, education: person.education });
+    setForm({ 
+      name: person.name || "", 
+      role: person.role || "", 
+      gender: person.gender || "male", 
+      birth: person.birth || "", 
+      isAlive: person.isAlive !== undefined ? person.isAlive : true, 
+      location: person.location || "", 
+      phone: person.phone || "", 
+      email: person.email || "", 
+      education: person.education || "" 
+    });
     setPhoto(person.photo || "");
-    if (person.parentId) { setRelationType("child"); setSelectedRelativeId(person.parentId); }
-    else if (person.partnerId) { setRelationType("partner"); setSelectedRelativeId(person.partnerId); }
-    else { setSelectedRelativeId(""); }
+    
+    // Set logika dropdown relasi
+    if (person.parentId) { 
+      setRelationType("child"); 
+      setSelectedRelativeId(person.parentId); 
+    }
+    else if (person.partnerId) { 
+      setRelationType("partner"); 
+      setSelectedRelativeId(person.partnerId); 
+    }
+    else { 
+      setSelectedRelativeId(""); 
+    }
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
@@ -234,21 +259,80 @@ const AdminPage = ({ family }) => {
     }
   };
 
+  // --- BAGIAN INI SUDAH DIPERBAIKI (ANTI UNDEFINED) ---
   const handleSubmit = (e) => {
     e.preventDefault();
+
+    // 1. SIAPKAN ID YANG AMAN (Angka atau null)
+    const inputRelativeId = selectedRelativeId ? parseInt(selectedRelativeId) : null;
+    
+    // Tentukan nilai baru
+    const newParentId  = (relationType === "child") ? inputRelativeId : null;
+    const newPartnerId = (relationType === "partner") ? inputRelativeId : null;
+
     let updatedFamily;
+
+    // A. LOGIKA EDIT (UPDATE)
     if (editId) {
       updatedFamily = family.map(p => {
         if (p.id === editId) {
-          return { ...p, ...form, photo: photo, parentId: (!isFirstData && relationType === "child") ? parseInt(selectedRelativeId) : p.parentId, partnerId: (!isFirstData && relationType === "partner") ? parseInt(selectedRelativeId) : p.partnerId };
-        } return p;
+          // Ambil ID lama, jika undefined ganti null
+          const oldParentId = p.parentId !== undefined ? p.parentId : null;
+          const oldPartnerId = p.partnerId !== undefined ? p.partnerId : null;
+
+          return {
+            ...p, 
+            ...form, 
+            photo: photo,
+            // Jika edit mode Anak: update parentId, pertahankan partnerId lama
+            // Jika edit mode Pasangan: update partnerId, pertahankan parentId lama
+            parentId: (!isFirstData && relationType === "child") ? newParentId : oldParentId,
+            partnerId: (!isFirstData && relationType === "partner") ? newPartnerId : oldPartnerId
+          };
+        }
+        return p;
       });
-    } else {
-      if (!isFirstData && !selectedRelativeId) return alert("Pilih Orang Tua / Pasangan!");
-      const newPerson = { id: Date.now(), ...form, photo: photo, parentId: (relationType === "child" && !isFirstData) ? parseInt(selectedRelativeId) : null, partnerId: (relationType === "partner" && !isFirstData) ? parseInt(selectedRelativeId) : null };
+    } 
+    // B. LOGIKA TAMBAH BARU (CREATE)
+    else {
+      if (!isFirstData && !inputRelativeId) return alert("Pilih Orang Tua / Pasangan dulu!");
+      
+      const newPerson = {
+        id: Date.now(), 
+        ...form, 
+        photo: photo,
+        parentId: (!isFirstData && relationType === "child") ? newParentId : null,
+        partnerId: (!isFirstData && relationType === "partner") ? newPartnerId : null
+      };
       updatedFamily = [...family, newPerson];
     }
-    set(ref(db, 'family'), updatedFamily).then(() => { alert("Berhasil disimpan ke Server!"); if(editId) handleCancelEdit(); else { setForm(initialFormState); setPhoto(""); } });
+
+    // C. PEMBERSIH DATA (WAJIB ADA UNTUK FIREBASE)
+    // Mengubah semua "undefined" menjadi "null" atau string kosong ""
+    const cleanFamily = updatedFamily.map(person => ({
+        ...person,
+        parentId: person.parentId === undefined ? null : person.parentId,
+        partnerId: person.partnerId === undefined ? null : person.partnerId,
+        isAlive: person.isAlive === undefined ? true : person.isAlive,
+        role: person.role || "",
+        email: person.email || "",
+        phone: person.phone || "",
+        location: person.location || "",
+        education: person.education || "",
+        photo: person.photo || ""
+    }));
+
+    // D. KIRIM KE FIREBASE
+    set(ref(db, 'family'), cleanFamily)
+      .then(() => {
+        alert("BERHASIL DISIMPAN! ✅");
+        if(editId) handleCancelEdit();
+        else { setForm(initialFormState); setPhoto(""); }
+      })
+      .catch((err) => {
+        console.error(err);
+        alert("GAGAL: " + err.message);
+      });
   };
 
   const handleChange = (e) => setForm({ ...form, [e.target.name]: e.target.value });
@@ -324,22 +408,20 @@ const AdminPage = ({ family }) => {
   );
 };
 
-// --- USER PAGE (PERBAIKAN LOGIKA ROOT) ---
+// --- USER PAGE (DENGAN SAFE FALLBACK) ---
 const UserPage = ({ family }) => {
   const [focusedPersonId, setFocusedPersonId] = useState(null);
   const [infoModalData, setInfoModalData] = useState(null);
 
-  // LOGIKA PENTING: Cari leluhur yang parentId & partnerId nya kosong/tidak ada
+  // Cari leluhur (parent & partner null)
   const initialRoot = family.find(p => !p.parentId && !p.partnerId);
 
   useEffect(() => {
-    // 1. Jika belum ada fokus, dan ketemu leluhur ideal, pakai itu.
+    // 1. Prioritas: Leluhur murni
     if (initialRoot && !focusedPersonId) {
        setFocusedPersonId(initialRoot.id);
     }
-    // 2. (FALLBACK) Jika data ada, tapi tidak ketemu leluhur ideal (misal karena error data),
-    //    MAKA PAKSA TAMPILKAN ORANG PERTAMA DI DATABASE.
-    //    Ini yang membuat layar tidak akan blank putih lagi!
+    // 2. Fallback: Orang pertama di list (agar tidak blank)
     else if (family.length > 0 && !focusedPersonId && !initialRoot) {
        setFocusedPersonId(family[0].id);
     }
@@ -377,16 +459,14 @@ const UserPage = ({ family }) => {
   );
 };
 
-// --- APP ROOT (UTAMA) ---
+// --- APP ROOT ---
 function App() {
   const [family, setFamily] = useState([]);
 
   useEffect(() => {
-    // Ambil data dari Firebase Realtime Database
     const familyRef = ref(db, 'family');
     const unsubscribe = onValue(familyRef, (snapshot) => {
       const data = snapshot.val();
-      // Pastikan data selalu dalam bentuk Array, walaupun kosong
       setFamily(data || []);
     });
     return () => unsubscribe();
