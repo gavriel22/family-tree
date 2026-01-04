@@ -1,26 +1,78 @@
-import React, { useState, useEffect } from 'react';
-import { BrowserRouter as Router, Routes, Route, Link } from 'react-router-dom';
+import React, { useState, useEffect, useRef } from 'react';
+import { BrowserRouter as Router, Routes, Route, Link, useParams, useNavigate } from 'react-router-dom';
 // --- IMPORT FIREBASE ---
-// Pastikan file firebase.js ada di folder src
 import { db } from './firebase';
 import { ref, onValue, set } from "firebase/database";
 // -----------------------
 import { 
-  FaUser, FaInfoCircle, FaHome, FaPhone, FaMapMarkerAlt, 
-  FaEnvelope, FaGraduationCap, FaVenusMars, FaBirthdayCake, FaIdBadge, 
-  FaHeartbeat, FaEdit, FaTrash, FaTree, FaInstagram, FaFacebook, FaTwitter
+  FaUser, FaInfoCircle, FaPhone, FaMapMarkerAlt, 
+  FaEnvelope, FaGraduationCap, FaVenusMars, FaBirthdayCake, 
+  FaHeartbeat, FaEdit, FaTrash, FaTree, FaInstagram, FaFacebook, FaTwitter, 
+  FaArrowLeft, FaSearch 
 } from 'react-icons/fa'; 
 import './App.css';
 
 // --- KOMPONEN NAVBAR ---
-const Navbar = () => {
+const Navbar = ({ family }) => {
+  const [query, setQuery] = useState("");
+  const [results, setResults] = useState([]);
+  const navigate = useNavigate();
+
+  const handleSearch = (e) => {
+    const text = e.target.value;
+    setQuery(text);
+    if (text.length > 0 && family) {
+      const matches = family.filter(person => 
+        person.name.toLowerCase().includes(text.toLowerCase())
+      );
+      setResults(matches.slice(0, 5)); 
+    } else {
+      setResults([]);
+    }
+  };
+
+  const handleSelect = (id) => {
+    navigate(`/person/${id}`);
+    setQuery("");
+    setResults([]);
+  };
+
   return (
     <nav className="navbar">
       <div className="navbar-container">
         <Link to="/" className="navbar-brand">
           <div className="brand-icon"><FaTree /></div>
+          {/* Class brand-text akan di-hide di mobile lewat CSS */}
           <span className="brand-text">Galur<span className="brand-highlight">Family</span></span>
         </Link>
+
+        {/* Search Bar */}
+        <div className="search-container">
+          <div className="search-input-wrapper">
+            <FaSearch className="search-icon" />
+            <input 
+              type="text" 
+              placeholder="Cari anggota..." 
+              value={query}
+              onChange={handleSearch}
+              className="search-input"
+            />
+          </div>
+          {results.length > 0 && (
+            <div className="search-results">
+              {results.map(person => (
+                <div key={person.id} className="search-item" onClick={() => handleSelect(person.id)}>
+                  <img src={person.photo || "https://via.placeholder.com/30"} alt="avatar" />
+                  <div className="search-item-info">
+                    <span className="search-name">{person.name}</span>
+                    <span className="search-role">{person.role}</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
       </div>
     </nav>
   );
@@ -33,24 +85,15 @@ const Footer = () => {
       <div className="footer-content">
         <div className="footer-section brand-section">
           <h3><FaTree /> GalurFamily</h3>
-          <p>Aplikasi pencatatan silsilah keluarga digital untuk menjaga sejarah dan mengeratkan persaudaraan antar generasi.</p>
+          <p>Merawat silsilah, menjaga sejarah.</p>
         </div>
         <div className="footer-section links-section">
-          <h4>Menu Pintas</h4>
-          <ul>
-            <li><Link to="/">Pohon Keluarga</Link></li>
-            <li><a href="#">Tentang Aplikasi</a></li>
-            <li><a href="#">Bantuan & Panduan</a></li>
-          </ul>
-        </div>
-        <div className="footer-section social-section">
-          <h4>Terhubung</h4>
           <div className="social-icons">
             <a href="#" className="social-icon"><FaInstagram /></a>
             <a href="#" className="social-icon"><FaFacebook /></a>
             <a href="#" className="social-icon"><FaTwitter /></a>
           </div>
-          <p className="copyright">&copy; {new Date().getFullYear()} Galur Family Tree.<br/>All rights reserved.</p>
+          <p className="copyright">&copy; {new Date().getFullYear()} Galur Family.</p>
         </div>
       </div>
     </footer>
@@ -70,13 +113,12 @@ const MemberCard = ({ person, onClick, isDummy = false, dummyLabel = "" }) => {
     );
   }
   
-  // Pastikan person tidak null/undefined
   if (!person) return null;
 
   const statusClass = person.isAlive === 'false' || person.isAlive === false ? 'deceased' : '';
   
   return (
-    <div className={`card ${person.gender} ${statusClass}`} onClick={() => onClick(person)}>
+    <div className={`card ${person.gender} ${statusClass}`} onClick={(e) => onClick && onClick(person)}>
       <div className="card-content-wrapper">
         <div className={`avatar-ring ${statusClass}`}>
           {person.photo ? <img src={person.photo} alt={person.name} /> : <FaUser />}
@@ -117,22 +159,14 @@ const InfoModal = ({ person, onClose }) => {
               <span className={`modal-role ${person.gender}`}>{person.role || "-"}</span>
             </div>
           </div>
-          <hr className="divider" />
           <div className="modal-body">
-             <div className="info-row">
-                <span className="info-icon"><FaHeartbeat /></span>
-                <div className="info-text">
-                  <label>Status</label>
-                  {isDeceased ? <span className="status-badge deceased">Meninggal Dunia (Wafat)</span> : <span className="status-badge alive">Masih Hidup</span>}
-                </div>
-             </div>
-             <div className="info-row"><span className="info-icon"><FaVenusMars /></span><div className="info-text"><label>Jenis Kelamin</label><span>{person.gender==='male'?'Laki-laki':'Perempuan'}</span></div></div>
-             <div className="info-row"><span className="info-icon"><FaBirthdayCake /></span><div className="info-text"><label>Tanggal Lahir</label><span>{person.birth||'-'}</span></div></div>
-             <div className="info-row"><span className="info-icon"><FaMapMarkerAlt /></span><div className="info-text"><label>Lokasi Tinggal</label><span>{person.location||'-'}</span></div></div>
-             <div className="info-row"><span className="info-icon"><FaPhone /></span><div className="info-text"><label>Nomor Telepon</label><span>{person.phone||'-'}</span></div></div>
-             <div className="info-row"><span className="info-icon"><FaEnvelope /></span><div className="info-text"><label>Alamat Email</label><span>{person.email||'-'}</span></div></div>
-             <div className="info-row"><span className="info-icon"><FaGraduationCap /></span><div className="info-text"><label>Pendidikan Terakhir</label><span>{person.education||'-'}</span></div></div>
-             <div className="info-row footer-row"><span className="info-icon"><FaIdBadge /></span><div className="info-text"><label>ID Sistem</label><span>{person.id}</span></div></div>
+              <div className="info-row"><span className="info-icon"><FaHeartbeat /></span><div className="info-text"><label>Status</label>{isDeceased ? <span className="status-badge deceased">Meninggal Dunia</span> : <span className="status-badge alive">Masih Hidup</span>}</div></div>
+              <div className="info-row"><span className="info-icon"><FaVenusMars /></span><div className="info-text"><label>Jenis Kelamin</label><span>{person.gender==='male'?'Laki-laki':'Perempuan'}</span></div></div>
+              <div className="info-row"><span className="info-icon"><FaBirthdayCake /></span><div className="info-text"><label>Tanggal Lahir</label><span>{person.birth||'-'}</span></div></div>
+              <div className="info-row"><span className="info-icon"><FaMapMarkerAlt /></span><div className="info-text"><label>Lokasi Tinggal</label><span>{person.location||'-'}</span></div></div>
+              <div className="info-row"><span className="info-icon"><FaPhone /></span><div className="info-text"><label>Nomor Telepon</label><span>{person.phone||'-'}</span></div></div>
+              <div className="info-row"><span className="info-icon"><FaEnvelope /></span><div className="info-text"><label>Alamat Email</label><span>{person.email||'-'}</span></div></div>
+              <div className="info-row"><span className="info-icon"><FaGraduationCap /></span><div className="info-text"><label>Pendidikan Terakhir</label><span>{person.education||'-'}</span></div></div>
           </div>
         </div>
       </div>
@@ -140,66 +174,223 @@ const InfoModal = ({ person, onClose }) => {
   );
 };
 
-// --- LINEAGE VIEW ---
-const LineageView = ({ focusedPerson, family, onNodeClick, onOpenInfo }) => {
-  const [showDummyParents, setShowDummyParents] = useState(false);
-  useEffect(() => setShowDummyParents(false), [focusedPerson]);
+// --- PERSON DETAIL PAGE ---
+const PersonDetailPage = ({ family }) => {
+  const { id } = useParams();
+  const navigate = useNavigate();
+  const [infoModalData, setInfoModalData] = useState(null);
 
-  if (!focusedPerson) return null;
+  const person = family.find(p => p.id.toString() === id);
 
-  const parent = family.find(p => p.id === focusedPerson.parentId);
-  const parentPartner = parent ? family.find(p => p.partnerId === parent.id || p.id === parent.partnerId) : null;
-  const hasBiologicalParents = parent || parentPartner;
-  const spouse = family.find(p => p.partnerId === focusedPerson.id || p.id === focusedPerson.partnerId);
-  const children = family.filter(p => p.parentId === focusedPerson.id || (spouse && p.parentId === spouse.id));
-  const isDeceased = focusedPerson.isAlive === 'false' || focusedPerson.isAlive === false;
+  if (!person) return <div className="user-page-container"><div className="empty-state"><h3>Data Tidak Ditemukan</h3><button className="back-btn" onClick={() => navigate('/')} style={{marginTop:20}}>Kembali</button></div></div>;
+
+  const spouse = family.find(p => p.partnerId === person.id || p.id === person.partnerId);
+
+  let parentMain = null;
+  let parentSpouse = null;
+  if (person.parentId) {
+    parentMain = family.find(p => p.id === person.parentId);
+    if (parentMain) {
+      parentSpouse = family.find(p => p.partnerId === parentMain.id || p.id === parentMain.partnerId);
+    }
+  }
+
+  const children = family.filter(p => p.parentId === person.id || (spouse && p.parentId === spouse.id));
+  children.sort((a, b) => new Date(a.birth) - new Date(b.birth));
+
+  const handleCardClick = (targetPerson) => {
+    navigate(`/person/${targetPerson.id}`);
+  };
 
   return (
-    <div className="lineage-group">
-      {hasBiologicalParents && (
-        <div className="connector-hbox">
-          <div className="parents-section">
-            {parent && <MemberCard person={parent} onClick={onNodeClick} />}
-            {parentPartner && <MemberCard person={parentPartner} onClick={onNodeClick} />}
+    <div className="detail-page-container">
+      <button className="back-btn" onClick={() => navigate('/')}><FaArrowLeft /> Kembali ke Pohon Utama</button>
+      
+      <div className="detail-layout">
+        <div className="generation-section">
+          <h4 className="generation-title">Generasi Atas (Orang Tua)</h4>
+          <div className="generation-row">
+            {parentMain ? (
+              <>
+                <div className="node-individual">
+                   <MemberCard person={parentMain} onClick={handleCardClick} />
+                </div>
+                {parentSpouse && (
+                  <>
+                    <div className="spouse-connector-static">❤</div>
+                    <div className="node-individual">
+                      <MemberCard person={parentSpouse} onClick={handleCardClick} />
+                    </div>
+                  </>
+                )}
+              </>
+            ) : (
+              <p className="no-data-text">Data orang tua tidak tercatat.</p>
+            )}
           </div>
-          <div className="connector-line"></div>
         </div>
-      )}
-      {!hasBiologicalParents && showDummyParents && (
-        <div className="connector-hbox fade-in-anim">
-          <div className="parents-section dummy-parents"><MemberCard isDummy={true} dummyLabel="Ayah" /><MemberCard isDummy={true} dummyLabel="Ibu" /></div>
-          <div className="connector-line" style={{borderLeftStyle:'dashed'}}></div>
-        </div>
-      )}
-      <div className={`main-focus-container ${focusedPerson.gender}`} style={{cursor: !hasBiologicalParents ? 'pointer' : 'default'}}>
-        <div className="card-main" onClick={() => {if (!hasBiologicalParents) setShowDummyParents(!showDummyParents);}}>
-          <div className={`avatar-ring main ${focusedPerson.gender} ${isDeceased ? 'deceased-avatar' : ''}`}>
-            {focusedPerson.photo ? <img src={focusedPerson.photo} alt={focusedPerson.name} /> : <FaUser />}
+
+        <div className="vertical-line"></div>
+
+        <div className="generation-section focus-section">
+          <div className="generation-row">
+            <div className="node-individual focus-highlight">
+              <MemberCard person={person} onClick={() => setInfoModalData(person)} />
+              <div className="focus-badge">Profil Utama</div>
+            </div>
+            
+            {spouse && (
+              <>
+                  <div className="spouse-connector-static">❤</div>
+                  <div className="node-individual">
+                     <MemberCard person={spouse} onClick={handleCardClick} />
+                  </div>
+              </>
+            )}
           </div>
-          <span className="name-main">
-             {focusedPerson.name}
-             {isDeceased && <span style={{fontSize:'0.6em', color:'#94a3b8', verticalAlign:'middle'}}> (Alm)</span>}
-          </span>
-          <span className="role-main">{focusedPerson.role}</span>
         </div>
-        <div className="main-buttons-bar">
-          <div className="main-btn" onClick={(e) => {e.stopPropagation(); onOpenInfo(focusedPerson);}}><FaInfoCircle /> Detail Lengkap</div>
-        </div>
+
+        {children.length > 0 && <div className="vertical-line"></div>}
+
+        {children.length > 0 && (
+          <div className="generation-section">
+            <h4 className="generation-title">Generasi Bawah (Anak-Anak)</h4>
+            <div className="generation-row children-row">
+              {children.map(child => (
+                <div key={child.id} className="node-individual">
+                  <MemberCard person={child} onClick={handleCardClick} />
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
       </div>
-      {(spouse || children.length > 0) && (
-        <div className="connector-hbox">
-          <div className="connector-line"></div>
-          <div className="descendants-wrapper">
-            {spouse && (<div className="descendants-section section-partner"><div className="section-label label-pink">Pasangan</div><MemberCard person={spouse} onClick={onNodeClick} /></div>)}
-            {children.length > 0 && (<div className="descendants-section section-children"><div className="section-label label-blue">Anak - Anak</div>{children.map(c => <MemberCard key={c.id} person={c} onClick={onNodeClick} />)}</div>)}
-          </div>
-        </div>
-      )}
+      <InfoModal person={infoModalData} onClose={() => setInfoModalData(null)} />
     </div>
   );
 };
 
-// --- ADMIN PAGE (DENGAN FIX UNDEFINED) ---
+
+// --- TREE NODE ---
+const TreeNode = ({ person, family, onOpenInfo }) => {
+  const navigate = useNavigate();
+  const spouse = family.find(p => p.partnerId === person.id || p.id === person.partnerId);
+  const children = family.filter(p => p.parentId === person.id || (spouse && p.parentId === spouse.id));
+  children.sort((a, b) => new Date(a.birth) - new Date(b.birth));
+
+  const handleNavigate = (p) => {
+    navigate(`/person/${p.id}`);
+  };
+
+  return (
+    <li className="tree-node">
+      <div className="node-content">
+        <div className="couple-wrapper">
+          
+          {/* ORANG PERTAMA */}
+          <div className="node-individual">
+            <MemberCard person={person} onClick={handleNavigate} />
+            <button 
+              className="mini-info-btn"
+              onClick={(e) => {e.stopPropagation(); onOpenInfo(person);}}
+              title="Lihat Detail"
+            >
+              <FaInfoCircle />
+            </button>
+          </div>
+
+          {/* PASANGAN (Jika ada) */}
+          {spouse && (
+            <>
+              <div className="spouse-connector">❤</div>
+              <div className="node-individual">
+                <MemberCard person={spouse} onClick={handleNavigate} />
+                <button 
+                  className="mini-info-btn"
+                  onClick={(e) => {e.stopPropagation(); onOpenInfo(spouse);}}
+                  title="Lihat Detail"
+                >
+                  <FaInfoCircle />
+                </button>
+              </div>
+            </>
+          )}
+
+        </div>
+      </div>
+      {children.length > 0 && (
+        <ul className="tree-children">
+          {children.map(child => (
+            <TreeNode key={child.id} person={child} family={family} onOpenInfo={onOpenInfo}/>
+          ))}
+        </ul>
+      )}
+    </li>
+  );
+};
+
+// --- USER PAGE (AUTO CENTER SCROLL) ---
+const UserPage = ({ family }) => {
+  const [infoModalData, setInfoModalData] = useState(null);
+  const scrollContainerRef = useRef(null);
+
+  // LOGIKA AUTO CENTER SCROLL
+  useEffect(() => {
+    if (scrollContainerRef.current) {
+      const { scrollWidth, clientWidth } = scrollContainerRef.current;
+      // Hitung posisi tengah: (Total Konten - Layar) / 2
+      const centerPos = (scrollWidth - clientWidth) / 2;
+      // Jika konten lebih lebar dari layar, geser scroll ke tengah
+      if (centerPos > 0) {
+        scrollContainerRef.current.scrollLeft = centerPos;
+      }
+    }
+  }, [family]); 
+
+  const roots = family.filter(p => {
+    if (p.parentId) return false;
+    if (p.partnerId) {
+      const partner = family.find(f => f.id === p.partnerId);
+      if (partner) {
+        if (partner.parentId) return false;
+        if (!partner.parentId && p.gender === 'female') return false; 
+      }
+    }
+    return true;
+  });
+
+  return (
+    <div className="user-page-container">
+      <div className="page-header center">
+        <h1>Pohon Silsilah Besar</h1>
+        <p>Gunakan scroll di bawah/samping untuk melihat seluruh keluarga.</p>
+        {/* Tips tambahan untuk mobile */}
+        <p style={{fontSize: '0.8rem', color: '#f59e0b', marginTop: '5px', display: 'none'}} className="mobile-hint">
+           💡 Tips: Gunakan layar Landscape (Miring) agar lebih luas.
+        </p>
+      </div>
+      
+      {/* Container ini akan otomatis di-scroll ke tengah oleh useEffect */}
+      <div className="full-tree-wrapper" ref={scrollContainerRef}>
+        {family.length === 0 ? (
+           <div className="empty-state"><div className="empty-icon"><FaTree /></div><h3>Pohon Belum Ditanam</h3><p>Data belum tersedia.</p></div>
+        ) : (
+          <div className="tree-container">
+            <ul className="tree-root">
+              {roots.length > 0 ? roots.map(root => (
+                  <TreeNode key={root.id} person={root} family={family} onOpenInfo={setInfoModalData} />
+              )) : <div style={{padding:20, color:'red'}}>Error: Tidak ditemukan leluhur utama.</div>}
+            </ul>
+          </div>
+        )}
+      </div>
+      <InfoModal person={infoModalData} onClose={() => setInfoModalData(null)} />
+    </div>
+  );
+};
+
+// --- ADMIN PAGE ---
 const AdminPage = ({ family }) => {
   const initialFormState = { name: "", role: "", gender: "male", birth: "", isAlive: true, location: "", phone: "", email: "", education: "" };
   const [form, setForm] = useState(initialFormState);
@@ -212,43 +403,24 @@ const AdminPage = ({ family }) => {
   const handleEditClick = (person) => {
     setEditId(person.id);
     setForm({ 
-      name: person.name || "", 
-      role: person.role || "", 
-      gender: person.gender || "male", 
-      birth: person.birth || "", 
-      isAlive: person.isAlive !== undefined ? person.isAlive : true, 
-      location: person.location || "", 
-      phone: person.phone || "", 
-      email: person.email || "", 
-      education: person.education || "" 
+      name: person.name || "", role: person.role || "", gender: person.gender || "male", 
+      birth: person.birth || "", isAlive: person.isAlive !== undefined ? person.isAlive : true, 
+      location: person.location || "", phone: person.phone || "", email: person.email || "", education: person.education || "" 
     });
     setPhoto(person.photo || "");
-    
-    // Set logika dropdown relasi
-    if (person.parentId) { 
-      setRelationType("child"); 
-      setSelectedRelativeId(person.parentId); 
-    }
-    else if (person.partnerId) { 
-      setRelationType("partner"); 
-      setSelectedRelativeId(person.partnerId); 
-    }
-    else { 
-      setSelectedRelativeId(""); 
-    }
+    if (person.parentId) { setRelationType("child"); setSelectedRelativeId(person.parentId); }
+    else if (person.partnerId) { setRelationType("partner"); setSelectedRelativeId(person.partnerId); }
+    else { setSelectedRelativeId(""); }
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
-
   const handleCancelEdit = () => { setEditId(null); setForm(initialFormState); setPhoto(""); setSelectedRelativeId(""); };
-
   const handleDelete = (id) => {
-    if(window.confirm("Yakin hapus?")) {
+    if(window.confirm("Yakin hapus? Data yang terkait mungkin akan error.")) {
       const updatedFamily = family.filter(p => p.id !== id);
       set(ref(db, 'family'), updatedFamily).catch(err => alert("Gagal hapus: " + err.message));
       if(editId === id) handleCancelEdit();
     }
   };
-
   const handleImageUpload = (e) => {
     const file = e.target.files[0];
     if (file) {
@@ -258,83 +430,44 @@ const AdminPage = ({ family }) => {
       reader.readAsDataURL(file);
     }
   };
-
-  // --- BAGIAN INI SUDAH DIPERBAIKI (ANTI UNDEFINED) ---
   const handleSubmit = (e) => {
     e.preventDefault();
-
-    // 1. SIAPKAN ID YANG AMAN (Angka atau null)
     const inputRelativeId = selectedRelativeId ? parseInt(selectedRelativeId) : null;
-    
-    // Tentukan nilai baru
     const newParentId  = (relationType === "child") ? inputRelativeId : null;
     const newPartnerId = (relationType === "partner") ? inputRelativeId : null;
-
     let updatedFamily;
-
-    // A. LOGIKA EDIT (UPDATE)
     if (editId) {
       updatedFamily = family.map(p => {
         if (p.id === editId) {
-          // Ambil ID lama, jika undefined ganti null
           const oldParentId = p.parentId !== undefined ? p.parentId : null;
           const oldPartnerId = p.partnerId !== undefined ? p.partnerId : null;
-
           return {
-            ...p, 
-            ...form, 
-            photo: photo,
-            // Jika edit mode Anak: update parentId, pertahankan partnerId lama
-            // Jika edit mode Pasangan: update partnerId, pertahankan parentId lama
+            ...p, ...form, photo: photo,
             parentId: (!isFirstData && relationType === "child") ? newParentId : oldParentId,
             partnerId: (!isFirstData && relationType === "partner") ? newPartnerId : oldPartnerId
           };
         }
         return p;
       });
-    } 
-    // B. LOGIKA TAMBAH BARU (CREATE)
-    else {
+    } else {
       if (!isFirstData && !inputRelativeId) return alert("Pilih Orang Tua / Pasangan dulu!");
-      
       const newPerson = {
-        id: Date.now(), 
-        ...form, 
-        photo: photo,
+        id: Date.now(), ...form, photo: photo,
         parentId: (!isFirstData && relationType === "child") ? newParentId : null,
         partnerId: (!isFirstData && relationType === "partner") ? newPartnerId : null
       };
       updatedFamily = [...family, newPerson];
     }
-
-    // C. PEMBERSIH DATA (WAJIB ADA UNTUK FIREBASE)
-    // Mengubah semua "undefined" menjadi "null" atau string kosong ""
     const cleanFamily = updatedFamily.map(person => ({
         ...person,
         parentId: person.parentId === undefined ? null : person.parentId,
         partnerId: person.partnerId === undefined ? null : person.partnerId,
         isAlive: person.isAlive === undefined ? true : person.isAlive,
-        role: person.role || "",
-        email: person.email || "",
-        phone: person.phone || "",
-        location: person.location || "",
-        education: person.education || "",
-        photo: person.photo || ""
+        role: person.role || "", email: person.email || "", phone: person.phone || "",
+        location: person.location || "", education: person.education || "", photo: person.photo || ""
     }));
-
-    // D. KIRIM KE FIREBASE
-    set(ref(db, 'family'), cleanFamily)
-      .then(() => {
-        alert("BERHASIL DISIMPAN! ✅");
-        if(editId) handleCancelEdit();
-        else { setForm(initialFormState); setPhoto(""); }
-      })
-      .catch((err) => {
-        console.error(err);
-        alert("GAGAL: " + err.message);
-      });
+    set(ref(db, 'family'), cleanFamily).then(() => {alert("BERHASIL DISIMPAN! ✅");if(editId) handleCancelEdit();else { setForm(initialFormState); setPhoto(""); }}).catch((err) => { console.error(err); alert("GAGAL: " + err.message); });
   };
-
   const handleChange = (e) => setForm({ ...form, [e.target.name]: e.target.value });
   const handleRelationTypeChange = (type) => {
     setRelationType(type);
@@ -343,7 +476,7 @@ const AdminPage = ({ family }) => {
 
   return (
     <div className="admin-container">
-      <div className="page-header"><h1>Manajemen Data</h1><p>Halaman Rahasia Admin.</p><Link to="/" style={{color: 'var(--galur-blue)', fontWeight:'bold'}}>← Kembali ke Web Utama</Link></div>
+      <div className="page-header"><h1>Manajemen Data</h1><p>Halaman Rahasia Admin.</p><Link to="/" style={{color: 'var(--galur-blue)', fontWeight:'bold'}}>← Lihat Pohon Keluarga</Link></div>
       <div className="form-card">
         <div className="form-header"><h3>{editId ? `Edit: ${form.name}` : (isFirstData ? "Leluhur Utama" : "Tambah Anggota")}</h3>{editId && <button onClick={handleCancelEdit} className="cancel-badge">Batal</button>}</div>
         {!isFirstData && (
@@ -383,78 +516,22 @@ const AdminPage = ({ family }) => {
         </form>
       </div>
       <div className="members-list-container">
-         <h3>📂 Database Cloud ({family.length})</h3>
-         {family.length === 0 ? <p style={{color:'#94a3b8'}}>Belum ada data di server.</p> : (
-           <div className="members-table">
-             {family.map(person => (
-               <div key={person.id} className="member-row">
-                 <div className="member-row-info">
-                    <img src={person.photo || "https://via.placeholder.com/40"} alt="avatar" />
-                    <div><span className="row-name">{person.name}</span><span className="row-role">{person.role}</span></div>
-                 </div>
-                 <div className="member-row-actions">
-                    <button onClick={() => handleEditClick(person)} className="action-btn edit"><FaEdit /></button>
-                    <button onClick={() => handleDelete(person.id)} className="action-btn delete"><FaTrash /></button>
-                 </div>
-               </div>
-             ))}
-           </div>
-         )}
-         {family.length > 0 && (
-           <button onClick={() => {if(confirm('Hapus SEMUA data di Server (Permanen)?')) {set(ref(db, 'family'), []);}}} className="reset-all-btn">Reset Database Server</button>
-         )}
+          <h3>📂 Database Cloud ({family.length})</h3>
+            <div className="members-table">
+              {family.map(person => (
+                <div key={person.id} className="member-row">
+                  <div className="member-row-info">
+                     <img src={person.photo || "https://via.placeholder.com/40"} alt="avatar" />
+                     <div><span className="row-name">{person.name}</span><span className="row-role">{person.role}</span></div>
+                  </div>
+                  <div className="member-row-actions">
+                     <button onClick={() => handleEditClick(person)} className="action-btn edit"><FaEdit /></button>
+                     <button onClick={() => handleDelete(person.id)} className="action-btn delete"><FaTrash /></button>
+                  </div>
+                </div>
+              ))}
+            </div>
       </div>
-    </div>
-  );
-};
-
-// --- USER PAGE (DENGAN SAFE FALLBACK) ---
-const UserPage = ({ family }) => {
-  const [focusedPersonId, setFocusedPersonId] = useState(null);
-  const [infoModalData, setInfoModalData] = useState(null);
-
-  // Cari leluhur (parent & partner null)
-  const initialRoot = family.find(p => !p.parentId && !p.partnerId);
-
-  useEffect(() => {
-    // 1. Prioritas: Leluhur murni
-    if (initialRoot && !focusedPersonId) {
-       setFocusedPersonId(initialRoot.id);
-    }
-    // 2. Fallback: Orang pertama di list (agar tidak blank)
-    else if (family.length > 0 && !focusedPersonId && !initialRoot) {
-       setFocusedPersonId(family[0].id);
-    }
-  }, [family, initialRoot, focusedPersonId]);
-
-  return (
-    <div className="user-page-container">
-      <div className="page-header center">
-        <h1>Pohon Silsilah</h1>
-        <p>Telusuri garis keturunan dan hubungan kekerabatan.</p>
-      </div>
-      <div className="tree-wrapper">
-        {initialRoot && focusedPersonId !== initialRoot.id && (
-           <button className="btn-reset-view" onClick={() => setFocusedPersonId(initialRoot.id)}>
-            <FaHome /> Kembali ke Leluhur
-           </button>
-        )}
-        {family.length === 0 ? (
-           <div className="empty-state">
-             <div className="empty-icon"><FaTree /></div>
-             <h3>Pohon Belum Ditanam</h3>
-             <p>Data silsilah keluarga belum tersedia di server.</p>
-           </div>
-        ) : (
-          <LineageView 
-             focusedPerson={family.find(p => p.id === focusedPersonId)} 
-             family={family} 
-             onNodeClick={(p) => setFocusedPersonId(p.id)}
-             onOpenInfo={(p) => setInfoModalData(p)} 
-          />
-        )}
-      </div>
-      <InfoModal person={infoModalData} onClose={() => setInfoModalData(null)} />
     </div>
   );
 };
@@ -475,10 +552,11 @@ function App() {
   return (
     <Router>
       <div className="app-layout">
-        <Navbar />
+        <Navbar family={family} />
         <div className="app-content">
           <Routes>
             <Route path="/" element={<UserPage family={family} />} />
+            <Route path="/person/:id" element={<PersonDetailPage family={family} />} />
             <Route path="/admin" element={<AdminPage family={family} />} />
           </Routes>
         </div>
