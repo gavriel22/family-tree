@@ -9,9 +9,10 @@
   --text-grey: #64748b;
   --line-color: #cbd5e1;
   --nav-height: 70px;
-  /* Footer tidak perlu variabel height fix lagi, dia akan otomatis */
+  --footer-height: 100px; 
 }
 
+/* PENTING: Mencegah elemen melebar keluar layar */
 *, *::before, *::after {
   box-sizing: border-box;
 }
@@ -23,14 +24,11 @@ body, html {
   color: var(--text-dark);
   font-size: 16px; 
   -webkit-text-size-adjust: 100%;
-  /* KUNCI 1: Pastikan body tidak scroll, biar app-layout yang handle */
-  height: 100%; 
-  overflow: hidden; 
+  /* KUNCI: Mencegah scroll di body agar app-content yang scroll */
+  height: 100%; overflow: hidden;
 }
 
-#root {
-  height: 100%;
-}
+#root { height: 100%; }
 
 /* =========================================
    2. MAIN LAYOUT STRUCTURE (APP SHELL)
@@ -38,25 +36,23 @@ body, html {
 .app-layout {
   display: flex;
   flex-direction: column;
-  height: 100%; /* Full layar */
-  overflow: hidden; /* Mencegah double scrollbar */
+  height: 100%; 
+  overflow: hidden;
 }
 
-/* AREA KONTEN (YANG BISA DI-SCROLL) */
 .app-content {
-  flex: 1; /* Mengisi sisa ruang antara Navbar dan Footer */
-  overflow-y: auto; /* KUNCI 2: Scroll terjadi di sini! */
+  flex: 1; 
+  overflow-y: auto; /* AREA SCROLL DISINI */
   overflow-x: hidden;
   display: flex;
   flex-direction: column;
   position: relative;
-  /* Momentum scroll biar licin di HP */
   -webkit-overflow-scrolling: touch; 
   scroll-behavior: smooth;
 }
 
 /* =========================================
-   3. NAVBAR
+   3. NAVBAR & SEARCH BAR
    ========================================= */
 .navbar {
   height: var(--nav-height);
@@ -64,9 +60,7 @@ body, html {
   border-bottom: 1px solid #e2e8f0;
   display: flex; align-items: center; justify-content: center;
   box-shadow: 0 4px 6px -1px rgba(0,0,0,0.02);
-  flex-shrink: 0; /* Navbar jangan mengecil/terjepit */
-  z-index: 1000;
-  position: relative; /* Tidak perlu fixed lagi karena flexbox */
+  flex-shrink: 0; z-index: 1000; position: relative;
 }
 
 .navbar-container {
@@ -87,28 +81,69 @@ body, html {
 .brand-highlight { color: var(--galur-blue); }
 
 /* --- Search Logic --- */
-.search-container { position: relative; width: 100%; max-width: 300px; }
-.search-input-wrapper { position: relative; display: flex; align-items: center; }
-.search-icon { position: absolute; left: 12px; color: #94a3b8; font-size: 0.9rem; z-index: 10; }
-.search-input {
-  width: 100%; padding: 10px 10px 10px 38px; border-radius: 20px; 
-  border: 1px solid #e2e8f0; background: #f8fafc;
-  font-size: 0.9rem !important; margin-bottom: 0 !important; transition: all 0.2s;
+.search-container {
+  position: relative;
+  width: 100%;
+  max-width: 300px; 
 }
+
+.search-input-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.search-icon {
+  position: absolute;
+  left: 12px;
+  color: #94a3b8;
+  font-size: 0.9rem;
+  z-index: 10;
+}
+
+.search-input {
+  width: 100%;
+  padding: 10px 10px 10px 38px;
+  border-radius: 20px; 
+  border: 1px solid #e2e8f0;
+  background: #f8fafc;
+  font-size: 0.9rem !important; 
+  margin-bottom: 0 !important; 
+  transition: all 0.2s;
+}
+
 .search-input:focus {
-  background: white; border-color: var(--galur-blue); outline: none;
+  background: white;
+  border-color: var(--galur-blue);
+  outline: none;
   box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.2);
 }
+
 .search-results {
-  position: absolute; top: 110%; left: 0; right: 0; background: white;
-  border-radius: 12px; box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
-  border: 1px solid #e2e8f0; z-index: 2000; overflow: hidden;
-  max-height: 300px; overflow-y: auto;
+  position: absolute;
+  top: 110%; 
+  left: 0;
+  right: 0;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
+  border: 1px solid #e2e8f0;
+  z-index: 2000;
+  overflow: hidden;
+  max-height: 300px;
+  overflow-y: auto;
 }
+
 .search-item {
-  display: flex; align-items: center; gap: 10px; padding: 10px 15px;
-  cursor: pointer; border-bottom: 1px solid #f1f5f9; transition: background 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 15px;
+  cursor: pointer;
+  border-bottom: 1px solid #f1f5f9;
+  transition: background 0.2s;
 }
+
 .search-item:last-child { border-bottom: none; }
 .search-item:hover { background: #f1f5f9; }
 .search-item img {
@@ -122,20 +157,23 @@ body, html {
    4. FOOTER
    ========================================= */
 .footer {
-  background: #1e293b; color: #94a3b8;
+  background: #1e293b; 
+  color: #94a3b8;
   padding: 15px 20px;
   box-shadow: 0 -4px 10px rgba(0,0,0,0.1);
-  flex-shrink: 0; /* Footer jangan mengecil/terjepit */
-  z-index: 1000;
-  position: relative; /* Tidak perlu fixed lagi */
+  flex-shrink: 0; z-index: 1000; position: relative;
 }
 
 .footer-content {
   max-width: 1000px; margin: 0 auto;
   display: flex; align-items: center; justify-content: space-between;
 }
-.brand-section h3 { color: white; margin: 0; display: flex; align-items: center; gap: 8px; font-size: 1.1rem; }
+
+.brand-section h3 { 
+  color: white; margin: 0; display: flex; align-items: center; gap: 8px; font-size: 1.1rem; 
+}
 .brand-section p { margin: 2px 0 0 0; font-size: 0.8rem; color: #64748b; }
+
 .links-section { display: flex; flex-direction: column; align-items: flex-end; }
 .social-icons { display: flex; gap: 10px; margin-bottom: 5px; }
 .social-icon { 
@@ -147,7 +185,7 @@ body, html {
 .copyright { padding-top: 0; margin-top: 0; font-size: 0.75rem; border: none;}
 
 /* =========================================
-   5. PAGE HEADERS & CONTENT
+   5. PAGE HEADERS
    ========================================= */
 .page-header { padding: 30px 20px 10px; text-align: left; max-width: 800px; margin: 0 auto; }
 .page-header.center { text-align: center; }
@@ -155,34 +193,42 @@ body, html {
 .page-header p { margin: 5px 0 0; color: #64748b; font-size: 1rem; }
 
 /* =========================================
-   6. TREE STRUCTURE (DESKTOP)
+   6. TREE STRUCTURE (FIXED: CENTER & NO CLIP)
    ========================================= */
 .full-tree-wrapper {
   overflow: auto; 
-  /* Height 100% dari parent (.app-content) */
-  height: 100%; 
   width: 100%;
+  height: 100%; /* Isi penuh app-content */
   background-image: radial-gradient(#cbd5e1 1px, transparent 1px);
   background-size: 30px 30px;
   background-attachment: local; 
-  display: flex; align-items: flex-start; 
+  display: flex;
+  align-items: flex-start; 
   cursor: default;
 }
-/* Scrollbar Custom */
-.full-tree-wrapper::-webkit-scrollbar, .app-content::-webkit-scrollbar { width: 8px; height: 8px; }
+
+/* Mempercantik Scrollbar */
+.full-tree-wrapper::-webkit-scrollbar, .app-content::-webkit-scrollbar { width: 10px; height: 10px; }
 .full-tree-wrapper::-webkit-scrollbar-track, .app-content::-webkit-scrollbar-track { background: #f1f5f9; }
-.full-tree-wrapper::-webkit-scrollbar-thumb, .app-content::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+.full-tree-wrapper::-webkit-scrollbar-thumb, .app-content::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 5px; }
 .full-tree-wrapper::-webkit-scrollbar-thumb:hover, .app-content::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
 
-.tree-container { margin: 0 auto; padding: 20px 50px; min-width: min-content; }
+.tree-container {
+  margin: 0 auto; 
+  padding: 20px 50px; 
+  min-width: min-content; 
+}
+
 .tree-root, .tree-children {
   padding-top: 20px; position: relative; transition: all 0.5s;
   display: flex; justify-content: center; margin: 0; padding-left: 0; 
 }
+
 .tree-node {
   float: left; text-align: center; list-style-type: none;
   position: relative; padding: 20px 5px 0 5px; transition: all 0.5s;
 }
+
 .tree-node::before, .tree-node::after {
   content: ''; position: absolute; top: 0; right: 50%;
   border-top: 2px solid #cbd5e1; width: 50%; height: 20px;
@@ -198,30 +244,47 @@ body, html {
 }
 
 /* =========================================
-   7. MEMBER CARD STYLES
+   7. MEMBER CARD STYLES (ICON DI BAWAH)
    ========================================= */
 .couple-wrapper {
-  display: inline-flex; align-items: flex-start;
-  background: rgba(255, 255, 255, 0.85); padding: 15px 15px 10px 15px; 
-  border-radius: 12px; border: 1px solid #e2e8f0; position: relative;
-  gap: 20px; z-index: 10; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+  display: inline-flex;
+  align-items: flex-start; /* Sejajar di atas */
+  background: rgba(255, 255, 255, 0.85);
+  padding: 15px 15px 10px 15px; 
+  border-radius: 12px;
+  border: 1px solid #e2e8f0;
+  position: relative;
+  gap: 20px; 
+  z-index: 10;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
 }
+
 .node-individual {
-  position: relative; display: flex; flex-direction: column; align-items: center; gap: 5px; 
+  position: relative;
+  display: flex;
+  flex-direction: column; /* SUSUN KE BAWAH: KARTU LALU ICON */
+  align-items: center;
+  gap: 5px; 
 }
+
 .spouse-connector {
-  color: var(--galur-pink); font-size: 1.2rem; margin-top: 35px; animation: pulse 2s infinite;
+  color: var(--galur-pink);
+  font-size: 1.2rem;
+  margin-top: 35px; /* Sesuaikan agar sejajar dengan tengah kartu */
+  animation: pulse 2s infinite;
 }
 @keyframes pulse { 0% {transform: scale(1);} 50% {transform: scale(1.2);} 100% {transform: scale(1);} }
 
 .card {
-  width: 160px; background: white; padding: 10px;
+  width: 160px; /* Ukuran standard */
+  background: white; padding: 10px;
   border-radius: 10px; box-shadow: 0 2px 4px rgba(0,0,0,0.05);
   cursor: pointer; transition: all 0.2s ease;
   border: 1px solid #f1f5f9; border-left: 4px solid #cbd5e1; 
   position: relative; text-align: left;
 }
 .card:hover { transform: translateY(-3px); box-shadow: 0 8px 15px -3px rgba(0, 0, 0, 0.1); border-color: var(--galur-blue); }
+
 .card.male { border-left-color: var(--galur-blue); }
 .card.female { border-left-color: var(--galur-pink); }
 .card.deceased { background: #f8fafc; border-left-color: #94a3b8; }
@@ -237,46 +300,84 @@ body, html {
 .card.male .avatar-ring { background-color: #e0f2fe; color: var(--galur-blue); }
 .card.female .avatar-ring { background-color: #fce7f3; color: var(--galur-pink); }
 .avatar-ring img { width: 100%; height: 100%; object-fit: cover; }
+
 .card-info { display: flex; flex-direction: column; align-items: flex-start; overflow: hidden; }
 .name { font-weight: 700; font-size: 0.8rem; margin: 0; color: var(--text-dark); line-height: 1.2; text-overflow: ellipsis; white-space: nowrap; overflow: hidden; max-width: 100px;}
 .role { font-size: 0.65rem; text-transform: uppercase; font-weight: 600; margin-top: 3px; color: var(--text-grey); }
 
+/* Tombol Info di Bawah Kartu */
 .mini-info-btn {
-  position: static; transform: none; background: transparent; 
-  color: var(--galur-blue); border: 1px solid transparent;
-  width: 32px; height: 32px; border-radius: 50%;
+  position: static; 
+  transform: none;
+  background: transparent; 
+  color: var(--galur-blue); 
+  border: 1px solid transparent;
+  width: 32px; height: 32px; 
+  border-radius: 50%;
   display: flex; align-items: center; justify-content: center;
-  font-size: 1.1rem; cursor: pointer; transition: all 0.2s ease; margin-top: 2px;
+  font-size: 1.1rem; 
+  cursor: pointer;
+  transition: all 0.2s ease;
+  margin-top: 2px;
 }
-.mini-info-btn:hover { background: #e0f2fe; transform: scale(1.1); border-color: #bae6fd; }
+.mini-info-btn:hover {
+  background: #e0f2fe; 
+  transform: scale(1.1); 
+  border-color: #bae6fd;
+}
 
 /* =========================================
-   8. ADMIN PANEL (COMPACT)
+   8. ADMIN PANEL (EDITED: LEBIH RINGKAS)
    ========================================= */
-.admin-container { padding: 0 20px 40px; max-width: 800px; margin: 0 auto; }
-.form-card { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.05); margin-bottom: 30px; }
-.form-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
+.admin-container {
+  padding: 0 20px 40px;
+  max-width: 800px;
+  margin: 0 auto;
+}
+.form-card {
+  background: white; padding: 20px; border-radius: 12px; 
+  box-shadow: 0 4px 10px rgba(0,0,0,0.05); margin-bottom: 30px; 
+}
+.form-header {
+  display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; 
+}
 .admin-container input, .admin-container select, .admin-container textarea {
   background: #F8FAFC; border: 1px solid #E2E8F0; padding: 10px; 
   border-radius: 6px; width: 100%; box-sizing: border-box; margin-bottom: 8px; 
-  color: var(--text-dark); font-size: 0.9rem !important; font-family: inherit; line-height: 1.4; 
+  color: var(--text-dark); font-size: 0.9rem !important; 
+  font-family: inherit; line-height: 1.4; 
 }
 .admin-container select option { font-size: 0.9rem !important; padding: 5px; }
-.cancel-badge { background: #fef2f2; color: #ef4444; border: 1px solid #fecaca; padding: 4px 8px; border-radius: 6px; cursor: pointer; font-size: 0.75rem; font-weight: bold; }
-.save-btn { background: var(--text-dark); color: white; border-radius: 8px; font-weight: bold; width: 100%; padding: 12px; border: none; cursor: pointer; margin-top: 5px; font-size: 0.95rem; }
+.cancel-badge {
+  background: #fef2f2; color: #ef4444; border: 1px solid #fecaca;
+  padding: 4px 8px; border-radius: 6px; cursor: pointer; font-size: 0.75rem; font-weight: bold;
+}
+.save-btn {
+  background: var(--text-dark); color: white; border-radius: 8px; font-weight: bold;
+  width: 100%; padding: 12px; border: none; cursor: pointer; margin-top: 5px; font-size: 0.95rem; 
+}
 .save-btn.edit-mode { background: #0ea5e9; } 
 .save-btn:hover { opacity: 0.9; }
 .members-list-container { margin-top: 15px; }
 .members-list-container h3 { color: #334155; margin-bottom: 12px; font-size: 1.1rem; }
 .members-table { background: white; border-radius: 10px; border: 1px solid #e2e8f0; overflow: hidden; }
-.member-row { display: flex; justify-content: space-between; align-items: center; padding: 8px 12px; border-bottom: 1px solid #f1f5f9; }
+.member-row {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 8px 12px; border-bottom: 1px solid #f1f5f9;
+}
 .member-row:last-child { border-bottom: none; }
 .member-row-info { display: flex; align-items: center; gap: 10px; }
-.member-row-info img { width: 32px; height: 32px; border-radius: 50%; object-fit: cover; background: #f1f5f9; }
+.member-row-info img {
+  width: 32px; height: 32px; border-radius: 50%; object-fit: cover; background: #f1f5f9;
+}
 .row-name { font-weight: 600; font-size: 0.85rem; display: block; color: #1e293b; }
 .row-role { font-size: 0.7rem; color: #94a3b8; display: block; }
 .member-row-actions { display: flex; gap: 6px; }
-.action-btn { width: 28px; height: 28px; border-radius: 6px; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; color: white; transition: 0.2s; font-size: 0.8rem; }
+.action-btn {
+  width: 28px; height: 28px; border-radius: 6px; border: none; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  color: white; transition: 0.2s; font-size: 0.8rem;
+}
 .action-btn.edit { background: #3b82f6; }
 .action-btn.delete { background: #ef4444; }
 .action-btn:hover { opacity: 0.8; transform: scale(1.05); }
@@ -293,25 +394,37 @@ body, html {
   position: fixed; top: 0; left: 0; right: 0; bottom: 0;
   background: rgba(0,0,0,0.5); backdrop-filter: blur(2px);
   display: flex; justify-content: center; align-items: center;
-  z-index: 2000; animation: fadeIn 0.2s ease-out; padding: 20px;
+  z-index: 2000; animation: fadeIn 0.2s ease-out;
+  padding: 20px;
 }
 @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
 .info-modal {
-  background: white; width: 100%; max-width: 400px; max-height: 85vh; 
-  display: flex; flex-direction: column; border-radius: 12px; 
-  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25); overflow: hidden; 
+  background: white; width: 100%; max-width: 400px; 
+  max-height: 85vh; 
+  display: flex; flex-direction: column;
+  border-radius: 12px; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25); 
+  overflow: hidden; 
 }
-.modal-header { height: 45px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; position: relative; color: white; }
+.modal-header { 
+  height: 45px; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center; 
+  position: relative; color: white; 
+}
 .modal-header.male { background: var(--galur-blue); }
 .modal-header.female { background: var(--galur-pink); }
 .modal-header.deceased-header { background: #64748b; }
 .modal-header-title { font-size: 0.9rem; font-weight: 600; margin: 0; opacity: 0.95; }
 .close-modal-btn { 
-  position: absolute; top: 0; left: 0; bottom: 0; background: transparent; 
-  border: none; color: white; width: 45px; font-size: 1.1rem; cursor: pointer; 
+  position: absolute; top: 0; left: 0; bottom: 0; 
+  background: transparent; border: none; color: white; 
+  width: 45px; font-size: 1.1rem; cursor: pointer; 
 }
 .modal-content { padding: 20px; overflow-y: auto; }
-.modal-profile-summary { display: flex; align-items: center; gap: 15px; margin-bottom: 15px; padding-bottom: 15px; border-bottom: 1px solid #f1f5f9; }
+.modal-profile-summary { 
+  display: flex; align-items: center; gap: 15px; 
+  margin-bottom: 15px; padding-bottom: 15px; border-bottom: 1px solid #f1f5f9; 
+}
 .modal-avatar-big {
   width: 60px; height: 60px; border-radius: 50%; overflow: hidden; background: #f1f5f9; 
   display: flex; align-items: center; justify-content: center; font-size: 24px; 
@@ -339,14 +452,27 @@ body, html {
    10. DETAIL PAGE (PERSON PROFILE PAGE)
    ========================================= */
 .detail-page-container {
-  max-width: 900px; margin: 0 auto; padding: 20px;
-  display: flex; flex-direction: column; align-items: center;
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
 }
 .back-btn {
-  align-self: flex-start; background: white; border: 1px solid #e2e8f0;
-  padding: 10px 15px; border-radius: 8px; cursor: pointer;
-  display: flex; align-items: center; gap: 8px; color: var(--text-dark);
-  font-weight: 600; margin-bottom: 30px; transition: all 0.2s;
+  align-self: flex-start;
+  background: white;
+  border: 1px solid #e2e8f0;
+  padding: 10px 15px;
+  border-radius: 8px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--text-dark);
+  font-weight: 600;
+  margin-bottom: 30px;
+  transition: all 0.2s;
 }
 .back-btn:hover { background: #f1f5f9; transform: translateX(-3px); }
 .detail-layout { display: flex; flex-direction: column; align-items: center; width: 100%; }
@@ -361,13 +487,13 @@ body, html {
 .no-data-text { color: #cbd5e1; font-style: italic; padding: 20px; border: 1px dashed #cbd5e1; border-radius: 10px; }
 
 /* =========================================
-   11. MOBILE RESPONSIVE (FINAL)
+   11. MOBILE RESPONSIVE TWEAKS (FINAL FIX)
    ========================================= */
 @media (max-width: 768px) {
-  /* Navbar */
+  /* Navbar Ringkas */
   .brand-text { display: none; }
   .navbar-container { justify-content: center; gap: 15px; }
-  .search-container { max-width: 220px; }
+  .search-container { max-width: 200px; }
   .search-input { padding: 8px 10px 8px 35px; font-size: 0.8rem !important; }
   .mobile-hint { display: block !important; }
 
@@ -401,10 +527,10 @@ body, html {
   .couple-wrapper { gap: 10px; padding: 10px; }
   .tree-node { padding: 20px 2px 0 2px; }
   .mini-info-btn { width: 28px; height: 28px; font-size: 1rem; }
-
+  
   /* Footer Stacked */
   .footer { padding: 15px; height: auto; text-align: center; }
-  .footer-content { flex-direction: column; gap: 8px; }
+  .footer-content { flex-direction: column; gap: 5px; }
   .links-section { align-items: center; width: 100%; }
   .social-icons { justify-content: center; }
   .brand-section h3 { font-size: 1rem; justify-content: center; }

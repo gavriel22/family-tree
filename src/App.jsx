@@ -42,7 +42,6 @@ const Navbar = ({ family }) => {
       <div className="navbar-container">
         <Link to="/" className="navbar-brand">
           <div className="brand-icon"><FaTree /></div>
-          {/* Class brand-text akan di-hide di mobile lewat CSS */}
           <span className="brand-text">Galur<span className="brand-highlight">Family</span></span>
         </Link>
 
@@ -330,31 +329,36 @@ const TreeNode = ({ person, family, onOpenInfo }) => {
   );
 };
 
-// --- USER PAGE (AUTO CENTER SCROLL) ---
+// --- USER PAGE (AUTO CENTER SCROLL & FILTER HIDDEN) ---
 const UserPage = ({ family }) => {
   const [infoModalData, setInfoModalData] = useState(null);
   const scrollContainerRef = useRef(null);
+
+  // 1. FILTER: Hanya ambil anggota yang TIDAK disembunyikan
+  const visibleFamily = family.filter(p => !p.hideFromTree);
 
   // LOGIKA AUTO CENTER SCROLL
   useEffect(() => {
     if (scrollContainerRef.current) {
       const { scrollWidth, clientWidth } = scrollContainerRef.current;
-      // Hitung posisi tengah: (Total Konten - Layar) / 2
       const centerPos = (scrollWidth - clientWidth) / 2;
-      // Jika konten lebih lebar dari layar, geser scroll ke tengah
       if (centerPos > 0) {
         scrollContainerRef.current.scrollLeft = centerPos;
       }
     }
-  }, [family]); 
+  }, [visibleFamily]); 
 
-  const roots = family.filter(p => {
-    if (p.parentId) return false;
+  // 2. LOGIKA ROOT
+  const roots = visibleFamily.filter(p => {
+    const parentIsVisible = visibleFamily.find(f => f.id === p.parentId);
+    if (parentIsVisible) return false;
+
     if (p.partnerId) {
-      const partner = family.find(f => f.id === p.partnerId);
+      const partner = visibleFamily.find(f => f.id === p.partnerId);
       if (partner) {
-        if (partner.parentId) return false;
-        if (!partner.parentId && p.gender === 'female') return false; 
+        const partnerParentIsVisible = visibleFamily.find(f => f.id === partner.parentId);
+        if (partnerParentIsVisible) return false;
+        if (!partnerParentIsVisible && p.gender === 'female') return false; 
       }
     }
     return true;
@@ -365,22 +369,20 @@ const UserPage = ({ family }) => {
       <div className="page-header center">
         <h1>Pohon Silsilah Besar</h1>
         <p>Gunakan scroll di bawah/samping untuk melihat seluruh keluarga.</p>
-        {/* Tips tambahan untuk mobile */}
         <p style={{fontSize: '0.8rem', color: '#f59e0b', marginTop: '5px', display: 'none'}} className="mobile-hint">
            💡 Tips: Gunakan layar Landscape (Miring) agar lebih luas.
         </p>
       </div>
       
-      {/* Container ini akan otomatis di-scroll ke tengah oleh useEffect */}
       <div className="full-tree-wrapper" ref={scrollContainerRef}>
-        {family.length === 0 ? (
+        {visibleFamily.length === 0 ? (
            <div className="empty-state"><div className="empty-icon"><FaTree /></div><h3>Pohon Belum Ditanam</h3><p>Data belum tersedia.</p></div>
         ) : (
           <div className="tree-container">
             <ul className="tree-root">
               {roots.length > 0 ? roots.map(root => (
-                  <TreeNode key={root.id} person={root} family={family} onOpenInfo={setInfoModalData} />
-              )) : <div style={{padding:20, color:'red'}}>Error: Tidak ditemukan leluhur utama.</div>}
+                  <TreeNode key={root.id} person={root} family={visibleFamily} onOpenInfo={setInfoModalData} />
+              )) : <div style={{padding:20, color:'red'}}>Error: Tidak ditemukan leluhur utama yang ditampilkan.</div>}
             </ul>
           </div>
         )}
@@ -390,11 +392,13 @@ const UserPage = ({ family }) => {
   );
 };
 
-// --- ADMIN PAGE ---
+// --- ADMIN PAGE (FITUR: ANAK, PASANGAN, ORANG TUA) ---
 const AdminPage = ({ family }) => {
-  const initialFormState = { name: "", role: "", gender: "male", birth: "", isAlive: true, location: "", phone: "", email: "", education: "" };
+  const initialFormState = { name: "", role: "", gender: "male", birth: "", isAlive: true, hideFromTree: false, location: "", phone: "", email: "", education: "" };
   const [form, setForm] = useState(initialFormState);
   const [photo, setPhoto] = useState("");
+  
+  // Type: child, partner, parent
   const [relationType, setRelationType] = useState("child");
   const [selectedRelativeId, setSelectedRelativeId] = useState("");
   const [editId, setEditId] = useState(null);
@@ -404,16 +408,27 @@ const AdminPage = ({ family }) => {
     setEditId(person.id);
     setForm({ 
       name: person.name || "", role: person.role || "", gender: person.gender || "male", 
-      birth: person.birth || "", isAlive: person.isAlive !== undefined ? person.isAlive : true, 
+      birth: person.birth || "", isAlive: person.isAlive !== undefined ? person.isAlive : true,
+      hideFromTree: person.hideFromTree || false, 
       location: person.location || "", phone: person.phone || "", email: person.email || "", education: person.education || "" 
     });
     setPhoto(person.photo || "");
-    if (person.parentId) { setRelationType("child"); setSelectedRelativeId(person.parentId); }
-    else if (person.partnerId) { setRelationType("partner"); setSelectedRelativeId(person.partnerId); }
-    else { setSelectedRelativeId(""); }
+    
+    // Logika Edit
+    if (person.parentId) { 
+      setRelationType("child"); setSelectedRelativeId(person.parentId); 
+    } else if (person.partnerId) { 
+      setRelationType("partner"); setSelectedRelativeId(person.partnerId); 
+    } else { 
+      setRelationType("child"); setSelectedRelativeId(""); 
+    }
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
-  const handleCancelEdit = () => { setEditId(null); setForm(initialFormState); setPhoto(""); setSelectedRelativeId(""); };
+
+  const handleCancelEdit = () => { 
+    setEditId(null); setForm(initialFormState); setPhoto(""); setSelectedRelativeId(""); setRelationType("child");
+  };
+
   const handleDelete = (id) => {
     if(window.confirm("Yakin hapus? Data yang terkait mungkin akan error.")) {
       const updatedFamily = family.filter(p => p.id !== id);
@@ -421,6 +436,7 @@ const AdminPage = ({ family }) => {
       if(editId === id) handleCancelEdit();
     }
   };
+
   const handleImageUpload = (e) => {
     const file = e.target.files[0];
     if (file) {
@@ -430,17 +446,20 @@ const AdminPage = ({ family }) => {
       reader.readAsDataURL(file);
     }
   };
+
   const handleSubmit = (e) => {
     e.preventDefault();
     const inputRelativeId = selectedRelativeId ? parseInt(selectedRelativeId) : null;
-    const newParentId  = (relationType === "child") ? inputRelativeId : null;
-    const newPartnerId = (relationType === "partner") ? inputRelativeId : null;
-    let updatedFamily;
+    let updatedFamily = [...family];
+
     if (editId) {
+      // --- MODE EDIT ---
       updatedFamily = family.map(p => {
         if (p.id === editId) {
           const oldParentId = p.parentId !== undefined ? p.parentId : null;
           const oldPartnerId = p.partnerId !== undefined ? p.partnerId : null;
+          const newParentId = (relationType === "child") ? inputRelativeId : null;
+          const newPartnerId = (relationType === "partner") ? inputRelativeId : null;
           return {
             ...p, ...form, photo: photo,
             parentId: (!isFirstData && relationType === "child") ? newParentId : oldParentId,
@@ -450,28 +469,74 @@ const AdminPage = ({ family }) => {
         return p;
       });
     } else {
-      if (!isFirstData && !inputRelativeId) return alert("Pilih Orang Tua / Pasangan dulu!");
-      const newPerson = {
-        id: Date.now(), ...form, photo: photo,
-        parentId: (!isFirstData && relationType === "child") ? newParentId : null,
-        partnerId: (!isFirstData && relationType === "partner") ? newPartnerId : null
-      };
-      updatedFamily = [...family, newPerson];
+      // --- MODE TAMBAH ---
+      if (!isFirstData && !inputRelativeId) return alert("Pilih Anggota Keluarga yang Terkait!");
+      const newId = Date.now();
+      const newPerson = { id: newId, ...form, photo: photo, parentId: null, partnerId: null };
+
+      if (relationType === 'child') {
+        newPerson.parentId = inputRelativeId;
+        updatedFamily.push(newPerson);
+      } else if (relationType === 'partner') {
+        newPerson.partnerId = inputRelativeId;
+        updatedFamily.push(newPerson);
+        updatedFamily = updatedFamily.map(p => {
+            if (p.id === inputRelativeId) return { ...p, partnerId: newId };
+            return p;
+        });
+      } else if (relationType === 'parent') {
+        // Tambah Orang Tua di Atas
+        newPerson.parentId = null; 
+        updatedFamily.push(newPerson);
+        // Update anak yang dipilih
+        updatedFamily = updatedFamily.map(p => {
+          if (p.id === inputRelativeId) return { ...p, parentId: newId };
+          return p;
+        });
+      } else {
+        updatedFamily.push(newPerson);
+      }
     }
+
     const cleanFamily = updatedFamily.map(person => ({
         ...person,
         parentId: person.parentId === undefined ? null : person.parentId,
         partnerId: person.partnerId === undefined ? null : person.partnerId,
         isAlive: person.isAlive === undefined ? true : person.isAlive,
+        hideFromTree: person.hideFromTree === undefined ? false : person.hideFromTree,
         role: person.role || "", email: person.email || "", phone: person.phone || "",
         location: person.location || "", education: person.education || "", photo: person.photo || ""
     }));
-    set(ref(db, 'family'), cleanFamily).then(() => {alert("BERHASIL DISIMPAN! ✅");if(editId) handleCancelEdit();else { setForm(initialFormState); setPhoto(""); }}).catch((err) => { console.error(err); alert("GAGAL: " + err.message); });
+
+    set(ref(db, 'family'), cleanFamily).then(() => {
+        alert("BERHASIL DISIMPAN! ✅");
+        if(editId) handleCancelEdit();
+        else { setForm(initialFormState); setPhoto(""); }
+    }).catch((err) => { console.error(err); alert("GAGAL: " + err.message); });
   };
-  const handleChange = (e) => setForm({ ...form, [e.target.name]: e.target.value });
+  
+  const handleChange = (e) => {
+    const value = e.target.type === 'checkbox' ? e.target.checked : e.target.value;
+    setForm({ ...form, [e.target.name]: value });
+  };
+
   const handleRelationTypeChange = (type) => {
     setRelationType(type);
-    if(!editId) setForm(prev => ({ ...prev, role: type === 'partner' ? (prev.gender === 'female' ? 'Istri' : 'Suami') : '' }));
+    if (!editId) {
+       let roleSuggestion = "";
+       if (type === 'partner') roleSuggestion = (form.gender === 'female' ? 'Istri' : 'Suami');
+       else if (type === 'child') roleSuggestion = "Anak";
+       else if (type === 'parent') roleSuggestion = "Ayah/Ibu";
+       setForm(prev => ({ ...prev, role: roleSuggestion }));
+    }
+  };
+
+  // Helper Text Dropdown
+  const getDropdownLabel = () => {
+    if (relationType === 'child') return "Siapa Orang Tuanya?";
+    if (relationType === 'partner') return "Siapa Pasangannya?";
+    if (relationType === 'parent') return "Siapa Anaknya?";
+    return "Pilih Anggota";
   };
 
   return (
@@ -479,12 +544,15 @@ const AdminPage = ({ family }) => {
       <div className="page-header"><h1>Manajemen Data</h1><p>Halaman Rahasia Admin.</p><Link to="/" style={{color: 'var(--galur-blue)', fontWeight:'bold'}}>← Lihat Pohon Keluarga</Link></div>
       <div className="form-card">
         <div className="form-header"><h3>{editId ? `Edit: ${form.name}` : (isFirstData ? "Leluhur Utama" : "Tambah Anggota")}</h3>{editId && <button onClick={handleCancelEdit} className="cancel-badge">Batal</button>}</div>
+        
         {!isFirstData && (
-          <div style={{display:'flex', gap:'10px', marginBottom:'20px'}}>
-            <button type="button" onClick={() => handleRelationTypeChange('child')} style={{flex:1, padding:'10px', background:relationType==='child'?'var(--galur-blue)':'#f1f5f9', color:relationType==='child'?'white':'black', border:'none', borderRadius:'8px', fontWeight:'bold'}}>Anak</button>
-            <button type="button" onClick={() => handleRelationTypeChange('partner')} style={{flex:1, padding:'10px', background:relationType==='partner'?'var(--galur-pink)':'#f1f5f9', color:relationType==='partner'?'white':'black', border:'none', borderRadius:'8px', fontWeight:'bold'}}>Pasangan</button>
+          <div style={{display:'flex', gap:'5px', marginBottom:'20px'}}>
+            <button type="button" onClick={() => handleRelationTypeChange('child')} style={{flex:1, padding:'10px', background:relationType==='child'?'var(--galur-blue)':'#f1f5f9', color:relationType==='child'?'white':'black', border:'none', borderRadius:'8px', fontWeight:'bold', fontSize:'0.8rem'}}>Anak</button>
+            <button type="button" onClick={() => handleRelationTypeChange('partner')} style={{flex:1, padding:'10px', background:relationType==='partner'?'var(--galur-pink)':'#f1f5f9', color:relationType==='partner'?'white':'black', border:'none', borderRadius:'8px', fontWeight:'bold', fontSize:'0.8rem'}}>Pasangan</button>
+            <button type="button" onClick={() => handleRelationTypeChange('parent')} style={{flex:1, padding:'10px', background:relationType==='parent'?'#22c55e':'#f1f5f9', color:relationType==='parent'?'white':'black', border:'none', borderRadius:'8px', fontWeight:'bold', fontSize:'0.8rem'}}>Orang Tua</button>
           </div>
         )}
+
         <form onSubmit={handleSubmit}>
           <input name="name" placeholder="Nama Lengkap" value={form.name} onChange={handleChange} required />
           <div style={{display:'flex', gap:'10px'}}>
@@ -495,6 +563,12 @@ const AdminPage = ({ family }) => {
              <input name="birth" type="date" placeholder="Tgl Lahir" value={form.birth} onChange={handleChange} />
              <select name="gender" value={form.gender} onChange={handleChange}><option value="male">Laki-laki</option><option value="female">Perempuan</option></select>
           </div>
+          
+          <div style={{background: '#fff7ed', padding: '10px', borderRadius: '6px', marginBottom: '10px', border: '1px solid #ffedd5', display: 'flex', alignItems: 'center', gap: '10px'}}>
+            <input type="checkbox" name="hideFromTree" checked={form.hideFromTree} onChange={handleChange} style={{width: '20px', height: '20px', margin: 0}} />
+            <label style={{fontSize: '0.9rem', color: '#9a3412', fontWeight: 500}}>Sembunyikan dari Bagan (Tapi data tetap ada)</label>
+          </div>
+
           <input name="location" placeholder="Lokasi" value={form.location} onChange={handleChange} />
           <div style={{display:'flex', gap:'10px'}}>
              <input name="phone" placeholder="No. Telepon" value={form.phone} onChange={handleChange} />
@@ -506,12 +580,14 @@ const AdminPage = ({ family }) => {
             {photo && <img src={photo} alt="Prev" style={{width:40, height:40, borderRadius:'50%', objectFit:'cover', marginRight:10, verticalAlign:'middle'}} />}
             <input type="file" accept="image/*" onChange={handleImageUpload} style={{border:'none', padding:0, width:'auto'}} />
           </div>
+
           {!isFirstData && (
             <select value={selectedRelativeId} onChange={e => setSelectedRelativeId(e.target.value)} required={!editId}>
-              <option value="">-- Hubungkan dengan {relationType === 'child' ? 'Orang Tua' : 'Pasangan'} --</option>
+              <option value="">-- {getDropdownLabel()} --</option>
               {family.filter(p => p.id !== editId).map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
             </select>
           )}
+
           <button type="submit" className={`save-btn ${editId ? 'edit-mode' : ''}`}>{editId ? "Update Data" : "Simpan Data"}</button>
         </form>
       </div>
@@ -522,7 +598,10 @@ const AdminPage = ({ family }) => {
                 <div key={person.id} className="member-row">
                   <div className="member-row-info">
                      <img src={person.photo || "https://via.placeholder.com/40"} alt="avatar" />
-                     <div><span className="row-name">{person.name}</span><span className="row-role">{person.role}</span></div>
+                     <div>
+                       <span className="row-name">{person.name} {person.hideFromTree && <span style={{fontSize:'0.7em', color:'red'}}>(Hidden)</span>}</span>
+                       <span className="row-role">{person.role}</span>
+                     </div>
                   </div>
                   <div className="member-row-actions">
                      <button onClick={() => handleEditClick(person)} className="action-btn edit"><FaEdit /></button>
